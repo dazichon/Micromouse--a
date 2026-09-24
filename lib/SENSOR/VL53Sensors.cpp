@@ -1,154 +1,86 @@
-
 #include "VL53Sensors.h"
+#include "RobotConfig.h"
+#include <Wire.h>
 
-// ================= CONSTRUCTOR =================
+VL53Sensors tof;
 
-VL53Sensors::VL53Sensors()
-{
-    leftReady = false;
-    frontReady = false;
-    rightReady = false;
+// địa chỉ I2C mới gán cho từng cảm biến (mặc định của VL53L0X là 0x29)
+#define ADDR_FRONT 0x30
+#define ADDR_LEFT  0x31
+#define ADDR_RIGHT 0x32
+
+bool VL53Sensors::begin() {
+  pinMode(XSHUT_FRONT, OUTPUT);
+  pinMode(XSHUT_LEFT, OUTPUT);
+  pinMode(XSHUT_RIGHT, OUTPUT);
+
+  // tắt cả 3 (giữ ở reset) trước
+  digitalWrite(XSHUT_FRONT, LOW);
+  digitalWrite(XSHUT_LEFT, LOW);
+  digitalWrite(XSHUT_RIGHT, LOW);
+  delay(10);
+
+  Wire.begin(I2C_SDA, I2C_SCL);
+
+  bool ok = true;
+
+  // bật FRONT trước, gán địa chỉ mới
+  digitalWrite(XSHUT_FRONT, HIGH);
+  delay(10);
+  _front.setTimeout(500);
+  if (!_front.init()) { Serial.println("VL53L0X FRONT init FAIL"); ok = false; }
+  _front.setAddress(ADDR_FRONT);
+
+  // bật LEFT
+  digitalWrite(XSHUT_LEFT, HIGH);
+  delay(10);
+  _left.setTimeout(500);
+  if (!_left.init()) { Serial.println("VL53L0X LEFT init FAIL"); ok = false; }
+  _left.setAddress(ADDR_LEFT);
+
+  // bật RIGHT
+  digitalWrite(XSHUT_RIGHT, HIGH);
+  delay(10);
+  _right.setTimeout(500);
+  if (!_right.init()) { Serial.println("VL53L0X RIGHT init FAIL"); ok = false; }
+  _right.setAddress(ADDR_RIGHT);
+
+  _front.startContinuous();
+  _left.startContinuous();
+  _right.startContinuous();
+
+  _ok = ok;
+  return ok;
 }
 
-// ================= BEGIN =================
+WallDist VL53Sensors::read() {
+  WallDist d;
 
-void VL53Sensors::begin()
-{
-    Wire.begin(SDA_PIN, SCL_PIN);
+  d.front_mm = _front.readRangeContinuousMillimeters();
+  d.left_mm  = _left.readRangeContinuousMillimeters();
+  d.right_mm = _right.readRangeContinuousMillimeters();
 
-    pinMode(XSHUT_LEFT, OUTPUT);
-    pinMode(XSHUT_FRONT, OUTPUT);
-    pinMode(XSHUT_RIGHT, OUTPUT);
+  d.front_ok = !_front.timeoutOccurred() && d.front_mm < 2000;
+  d.left_ok  = !_left.timeoutOccurred()  && d.left_mm  < 2000;
+  d.right_ok = !_right.timeoutOccurred() && d.right_mm < 2000;
 
-    setupSensors();
+  return d;
 }
 
-// ================= SETUP SENSORS =================
-
-void VL53Sensors::setupSensors()
-{
-    // Tắt cả 3 cảm biến
-    digitalWrite(XSHUT_LEFT, LOW);
-    digitalWrite(XSHUT_FRONT, LOW);
-    digitalWrite(XSHUT_RIGHT, LOW);
-
-    delay(100);
-
-    // =================================================
-    // LEFT
-    // =================================================
-
-    digitalWrite(XSHUT_LEFT, HIGH);
-    delay(100);
-
-    sensorLeft.setTimeout(500);
-
-    leftReady = sensorLeft.init();
-
-    if (leftReady)
-    {
-        sensorLeft.setAddress(ADDRESS_LEFT);
-        sensorLeft.startContinuous();
-    }
-
-    // =================================================
-    // FRONT
-    // =================================================
-
-    digitalWrite(XSHUT_FRONT, HIGH);
-    delay(100);
-
-    sensorFront.setTimeout(500);
-
-    frontReady = sensorFront.init();
-
-    if (frontReady)
-    {
-        sensorFront.setAddress(ADDRESS_FRONT);
-        sensorFront.startContinuous();
-    }
-
-    // =================================================
-    // RIGHT
-    // =================================================
-
-    digitalWrite(XSHUT_RIGHT, HIGH);
-    delay(100);
-
-    sensorRight.setTimeout(500);
-
-    rightReady = sensorRight.init();
-
-    if (rightReady)
-    {
-        sensorRight.setAddress(ADDRESS_RIGHT);
-        sensorRight.startContinuous();
-    }
-
-    // =================================================
-    // DEBUG
-    // =================================================
-
-    Serial.print("VL53 LEFT: ");
-    Serial.println(leftReady ? "OK" : "FAIL");
-
-    Serial.print("VL53 FRONT: ");
-    Serial.println(frontReady ? "OK" : "FAIL");
-
-    Serial.print("VL53 RIGHT: ");
-    Serial.println(rightReady ? "OK" : "FAIL");
+bool VL53Sensors::frontWall(int thresholdMm) {
+  if (thresholdMm < 0) thresholdMm = WALL_THRESHOLD_MM;
+  WallDist d = read();
+  return d.front_ok && d.front_mm < thresholdMm;
 }
 
-// ================= READ LEFT =================
-
-uint16_t VL53Sensors::readLeft()
-{
-    if (!leftReady)
-    {
-        return 0;
-    }
-
-    return sensorLeft.readRangeContinuousMillimeters();
+bool VL53Sensors::leftWall(int thresholdMm) {
+  if (thresholdMm < 0) thresholdMm = WALL_THRESHOLD_MM;
+  WallDist d = read();
+  return d.left_ok && d.left_mm < thresholdMm;
 }
 
-// ================= READ FRONT =================
-
-uint16_t VL53Sensors::readFront()
-{
-    if (!frontReady)
-    {
-        return 0;
-    }
-
-    return sensorFront.readRangeContinuousMillimeters();
+bool VL53Sensors::rightWall(int thresholdMm) {
+  if (thresholdMm < 0) thresholdMm = WALL_THRESHOLD_MM;
+  WallDist d = read();
+  return d.right_ok && d.right_mm < thresholdMm;
 }
-
-// ================= READ RIGHT =================
-
-uint16_t VL53Sensors::readRight()
-{
-    if (!rightReady)
-    {
-        return 0;
-    }
-
-    return sensorRight.readRangeContinuousMillimeters();
-}
-
-// ================= STATUS =================
-
-bool VL53Sensors::leftOK()
-{
-    return leftReady;
-}
-
-bool VL53Sensors::frontOK()
-{
-    return frontReady;
-}
-
-bool VL53Sensors::rightOK()
-{
-    return rightReady;
-}
-

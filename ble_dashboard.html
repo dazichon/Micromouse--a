@@ -83,6 +83,7 @@
             font-size: 20px;
             font-weight: 700;
             background: linear-gradient(90deg, #ffffff, var(--primary-cyan));
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -607,8 +608,8 @@
             <div class="logo-group">
                 <div class="logo-icon">⚡</div>
                 <div>
-                    <div class="logo-title">MICROMOUSE PID & BLE DASHBOARD</div>
-                    <div class="logo-subtitle">Căn Chỉnh PID Bám Tường & Live Tuning cho ESP32-C6</div>
+                    <div class="logo-title">MICROMOUSE BLE DASHBOARD</div>
+                    <div class="logo-subtitle">Telemetry & điều khiển robot qua BLE cho ESP32-C6</div>
                 </div>
             </div>
 
@@ -628,7 +629,8 @@
             <button class="tab-btn active" onclick="switchTab(1)">🎯 Chế Độ 1: Test Quay Góc & Căn Chỉnh</button>
             <button class="tab-btn" onclick="switchTab(2)">⚙️ Chế Độ 2: Căn Chỉnh PID Bám Tường</button>
             <button class="tab-btn" onclick="switchTab(3)">📡 Chế Độ 3: Cảm Biến Khoảng Cách</button>
-            <button class="tab-btn" onclick="switchTab(4)">🖥️ Terminal Console BLE</button>
+            <button class="tab-btn" onclick="switchTab(4)">🗺️ Chế Độ 4: Bản Đồ Mê Cung 2D (Live)</button>
+            <button class="tab-btn" onclick="switchTab(5)">🖥️ Terminal Console BLE</button>
         </div>
 
         <!-- TAB 1: TEST QUAY GÓC & CĂN CHỈNH -->
@@ -691,7 +693,7 @@
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('lc', -0.5)">-</button>
-                                <input type="range" class="slider-input" id="sliderLC" min="0" max="35" step="0.5" value="18.0" oninput="updateBadge('LC', this.value)">
+                                <input type="range" class="slider-input" id="sliderLC" min="0" max="35" step="0.5" value="18.0" aria-label="LEFT_COMPENSATION" oninput="updateBadge('LC', this.value)">
                                 <button class="btn-step" onclick="stepParam('lc', 0.5)">+</button>
                                 <button class="btn-apply" onclick="applyParam('LC')">Gửi</button>
                             </div>
@@ -705,7 +707,7 @@
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('rc', -0.5)">-</button>
-                                <input type="range" class="slider-input" id="sliderRC" min="0" max="35" step="0.5" value="8.0" oninput="updateBadge('RC', this.value)">
+                                <input type="range" class="slider-input" id="sliderRC" min="0" max="35" step="0.5" value="8.0" aria-label="RIGHT_COMPENSATION" oninput="updateBadge('RC', this.value)">
                                 <button class="btn-step" onclick="stepParam('rc', 0.5)">+</button>
                                 <button class="btn-apply" onclick="applyParam('RC')">Gửi</button>
                             </div>
@@ -719,7 +721,7 @@
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('spd', -5)">-</button>
-                                <input type="range" class="slider-input" id="sliderSPD" min="40" max="255" step="5" value="90" oninput="updateBadge('SPD', this.value)">
+                                <input type="range" class="slider-input" id="sliderSPD" min="40" max="255" step="5" value="90" aria-label="TURN_SPEED" oninput="updateBadge('SPD', this.value)">
                                 <button class="btn-step" onclick="stepParam('spd', 5)">+</button>
                                 <button class="btn-apply" onclick="applyParam('SPD')">Gửi</button>
                             </div>
@@ -727,17 +729,17 @@
 
                         <!-- ACTION TEST BUTTONS -->
                         <div class="action-grid">
-                            <button class="btn-turn-left" onclick="sendCmd('TL')">
-                                <span>◀</span> QUAY THỬ RẼ TRÁI 90°
+                            <button class="btn-turn-left" onclick="sendCmd('START')">
+                                <span>▶</span> BẮT ĐẦU EXPLORE
                             </button>
-                            <button class="btn-turn-right" onclick="sendCmd('TR')">
-                                QUAY THỬ RẼ PHẢI 90° <span>▶</span>
+                            <button class="btn-turn-right" onclick="sendCmd('FAST')">
+                                ⚡ CHẠY FAST RUN <span>▶</span>
                             </button>
-                            <button class="btn-pid-run" onclick="sendCmd('PID_ON')">
-                                🚀 KÍCH HOẠT PID BÁM TƯỜNG TIẾN THẲNG
+                            <button class="btn-pid-run" onclick="sendCmd('STATUS')">
+                                📊 XEM TRẠNG THÁI ROBOT
                             </button>
-                            <button class="btn-brake" onclick="sendCmd('PID_OFF')">
-                                🛑 DỪNG DỪNG XE (PID OFF)
+                            <button class="btn-brake" onclick="sendCmd('STOP')">
+                                🛑 DỪNG ROBOT
                             </button>
                         </div>
                     </div>
@@ -760,7 +762,7 @@
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('kp', -0.1)">-</button>
-                        <input type="range" class="slider-input" id="sliderKP" min="0.0" max="5.0" step="0.05" value="1.20" oninput="updateBadge('KP', this.value)">
+                        <input type="range" class="slider-input" id="sliderKP" min="0.0" max="5.0" step="0.05" value="1.20" aria-label="Kp" oninput="updateBadge('KP', this.value)">
                         <button class="btn-step" onclick="stepParam('kp', 0.1)">+</button>
                         <button class="btn-apply" onclick="applyParam('KP')">Gửi Kp</button>
                     </div>
@@ -774,7 +776,7 @@
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('ki', -0.001)">-</button>
-                        <input type="range" class="slider-input" id="sliderKI" min="0.000" max="0.050" step="0.001" value="0.005" oninput="updateBadge('KI', this.value)">
+                        <input type="range" class="slider-input" id="sliderKI" min="0.000" max="0.050" step="0.001" value="0.005" aria-label="Ki" oninput="updateBadge('KI', this.value)">
                         <button class="btn-step" onclick="stepParam('ki', 0.001)">+</button>
                         <button class="btn-apply" onclick="applyParam('KI')">Gửi Ki</button>
                     </div>
@@ -788,18 +790,26 @@
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('kd', -0.05)">-</button>
-                        <input type="range" class="slider-input" id="sliderKD" min="0.00" max="2.00" step="0.05" value="0.25" oninput="updateBadge('KD', this.value)">
+                        <input type="range" class="slider-input" id="sliderKD" min="0.00" max="2.00" step="0.05" value="0.25" aria-label="Kd" oninput="updateBadge('KD', this.value)">
                         <button class="btn-step" onclick="stepParam('kd', 0.05)">+</button>
                         <button class="btn-apply" onclick="applyParam('KD')">Gửi Kd</button>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 16px; margin-top: 24px;">
-                    <button class="btn-pid-run" style="flex: 1;" onclick="sendCmd('PID_ON')">
-                        ▶ BẮT ĐẦU CHẠY PID BÁM TƯỜNG
+                    <button class="btn-pid-run" style="flex: 1;" onclick="sendCmd('START')">
+                        ▶ BẮT ĐẦU EXPLORE
                     </button>
-                    <button class="btn-brake" style="flex: 1;" onclick="sendCmd('PID_OFF')">
-                        ⏹ DỪNG CHẠY PID
+                    <button class="btn-brake" style="flex: 1;" onclick="sendCmd('FAST')">
+                        ⚡ CHẠY FAST RUN
+                    </button>
+                </div>
+                <div style="display: flex; gap: 16px; margin-top: 12px;">
+                    <button class="btn-turn-left" style="flex: 1;" onclick="sendCmd('STATUS')">
+                        📊 STATUS
+                    </button>
+                    <button class="btn-brake" style="flex: 1;" onclick="sendCmd('STOP')">
+                        ⏹ STOP
                     </button>
                 </div>
             </div>
@@ -823,8 +833,44 @@
             </div>
         </div>
 
-        <!-- TAB 4: TERMINAL CONSOLE -->
+        <!-- TAB 4: BẢN ĐỒ MÊ CUNG 2D REALTIME (8x8) -->
         <div class="tab-panel" id="tab4">
+            <div class="card" style="text-align: center;">
+                <div class="card-header">
+                    <div class="card-title">🗺️ Bản Đồ Mê Cung Realtime (8x8 Grid)</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">
+                        Vị trí hiện tại: <span id="robotPos" style="color: var(--primary-cyan); font-weight: 700;">(0, 0) - EAST</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
+                    <canvas id="mazeCanvas" width="456" height="456" style="border: 2px solid var(--primary-cyan); border-radius: 12px; background: #090d16; box-shadow: 0 0 25px rgba(0,242,254,0.25);"></canvas>
+                </div>
+
+                <!-- CHÚ THÍCH DẠNG LƯỚI 8x8 -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; text-align: left; background: rgba(0,0,0,0.3); padding: 14px 20px; border-radius: 12px; border: 1px solid var(--card-border); font-size: 13px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display:inline-block; width:16px; height:16px; background:#00f2fe; border-radius:50%; box-shadow:0 0 8px #00f2fe;"></span>
+                        <span><b>Con Chuột (Robot):</b> Hình tròn xanh lam (Vị trí 0..7)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display:inline-block; width:18px; height:6px; background:#ef4444; border-radius:2px; box-shadow:0 0 6px #ef4444;"></span>
+                        <span><b>Tường Gạch Đỏ:</b> Bức tường chắn đã xác nhận</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display:inline-block; width:18px; height:6px; background:rgba(255,255,255,0.2); border-radius:2px;"></span>
+                        <span><b>Tường Chưa Khám Phá (Xám):</b> Chưa phát hiện tường</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display:inline-block; width:14px; height:14px; background:#101827; border:1px solid rgba(255,255,255,0.1); border-radius:3px;"></span>
+                        <span><b>Ô Cờ 8x8 (Đen nhạt):</b> Không gian cho xe di chuyển</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: TERMINAL CONSOLE -->
+        <div class="tab-panel" id="tab5">
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">🖥️ Nhật Ký BLE Terminal (Real-time)</div>
@@ -834,7 +880,7 @@
                     <div class="terminal-line sys">[SYSTEM] Sẵn sàng kết nối Bluetooth LE...</div>
                 </div>
                 <div class="terminal-input-group">
-                    <input type="text" class="terminal-input" id="cmdInput" placeholder="Nhập lệnh (vd: PID_ON, PID_OFF, SET_KP=1.5, STATUS)..." onkeydown="if(event.key==='Enter') sendCustomCmd()">
+                    <input type="text" class="terminal-input" id="cmdInput" aria-label="Terminal command input" placeholder="Nhập lệnh (vd: START, FAST, STOP, STATUS, GET)..." onkeydown="if(event.key==='Enter') sendCustomCmd()">
                     <button class="btn-apply" style="padding: 10px 20px;" onclick="sendCustomCmd()">GỬI LỆNH</button>
                 </div>
             </div>
@@ -868,9 +914,19 @@
             document.querySelectorAll('.tab-btn').forEach((btn, i) => {
                 btn.classList.toggle('active', i + 1 === idx);
             });
-            document.querySelectorAll('.tab-panel').forEach((panel, i) => {
-                panel.classList.toggle('active', i + 1 === idx);
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.toggle('active', panel.id === `tab${idx}`);
             });
+            if (idx === 4) {
+                setTimeout(() => {
+                    if (typeof drawMaze === 'function') {
+                        drawMaze(typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.cx : 1, 
+                                 typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.cy : 1, 
+                                 typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.dir : 'E', 
+                                 typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.data : '');
+                    }
+                }, 50);
+            }
         }
 
         async function toggleConnect() {
@@ -930,18 +986,26 @@
             }
         }
 
+        function normalizeCommand(cmd) {
+            const command = String(cmd || '').trim().toUpperCase();
+            if (command === 'PID_ON') return 'START';
+            if (command === 'PID_OFF') return 'STOP';
+            return command;
+        }
+
         async function sendCmd(cmd) {
             if (!rxCharacteristic) {
                 log("Chưa kết nối Bluetooth! Vui lòng bấm Kết Nối Bluetooth.", "error");
                 return;
             }
 
+            const normalized = normalizeCommand(cmd);
             try {
                 const encoder = new TextEncoder();
-                await rxCharacteristic.writeValue(encoder.encode(cmd + "\n"));
-                log(`>> Gửi lệnh: ${cmd}`, "cmd");
+                await rxCharacteristic.writeValue(encoder.encode(normalized + "\n"));
+                log(`>> Gửi lệnh: ${normalized}`, "cmd");
             } catch (err) {
-                log(`Lỗi gửi lệnh ${cmd}: ` + err.message, "error");
+                log(`Lỗi gửi lệnh ${normalized}: ` + err.message, "error");
             }
         }
 
@@ -960,18 +1024,20 @@
             const str = decoder.decode(value).trim();
             if (!str) return;
 
-            const lines = str.split('\n');
+            const lines = str.split(/\r?\n/);
             lines.forEach(line => {
-                line = line.trim();
-                if (!line) return;
+                const clean = line.trim();
+                if (!clean) return;
 
-                log(line);
+                log(clean);
 
-                if (line.startsWith('{') && line.endsWith('}')) {
+                if (clean.startsWith('{') && clean.endsWith('}')) {
                     try {
-                        const data = JSON.parse(line);
+                        const data = JSON.parse(clean);
                         parseJSONPacket(data);
-                    } catch (e) {}
+                    } catch (e) {
+                        // Bỏ qua JSON lỗi, vẫn giữ log trên terminal
+                    }
                 }
             });
         }
@@ -979,36 +1045,163 @@
         function parseJSONPacket(data) {
             if (data.type === "telemetry") {
                 if (data.yaw !== undefined) {
-                    document.getElementById('yawVal').textContent = `${data.yaw.toFixed(1)}°`;
-                    document.getElementById('needle').style.transform = `rotate(${data.yaw}deg)`;
+                    const yaw = Number(data.yaw);
+                    document.getElementById('yawVal').textContent = `${yaw.toFixed(1)}°`;
+                    document.getElementById('needle').style.transform = `rotate(${yaw}deg)`;
                 }
 
-                if (data.l !== undefined) document.getElementById('distLeft').textContent = data.l;
-                if (data.f !== undefined) document.getElementById('distFront').textContent = data.f;
-                if (data.r !== undefined) document.getElementById('distRight').textContent = data.r;
+                if (data.l !== undefined) document.getElementById('distLeft').textContent = Number(data.l);
+                if (data.f !== undefined) document.getElementById('distFront').textContent = Number(data.f);
+                if (data.r !== undefined) document.getElementById('distRight').textContent = Number(data.r);
 
-                if (data.lc !== undefined) updateBadge('LC', data.lc);
-                if (data.rc !== undefined) updateBadge('RC', data.rc);
-                if (data.spd !== undefined) updateBadge('SPD', data.spd);
-
-                if (data.kp !== undefined) updateBadge('KP', data.kp);
-                if (data.ki !== undefined) updateBadge('KI', data.ki);
-                if (data.kd !== undefined) updateBadge('KD', data.kd);
-            }
-            else if (data.type === "turn_res") {
-                document.getElementById('resTarget').textContent = `${data.target.toFixed(1)}°`;
-                document.getElementById('resTurned').textContent = `${data.turned.toFixed(2)}°`;
-                
-                const err = (data.turned - data.target).toFixed(2);
-                const errEl = document.getElementById('resError');
-                errEl.textContent = (err >= 0 ? `+${err}` : `${err}`) + `° (${Math.abs(err) > 1.5 ? 'Bị Lố/Thiếu' : 'Chuẩn'})`;
-                errEl.style.color = Math.abs(err) <= 1.5 ? 'var(--success-green)' : 'var(--warning-amber)';
-
-                const statusEl = document.getElementById('resStatus');
-                statusEl.textContent = data.success ? "THÀNH CÔNG" : "TIMEOUT LỖI";
-                statusEl.style.color = data.success ? "var(--success-green)" : "var(--danger-red)";
+                if (data.ok !== undefined) {
+                    const statusEl = document.getElementById('resStatus');
+                    if (statusEl) {
+                        statusEl.textContent = Number(data.ok) ? 'SENSOR OK' : 'SENSOR NG';
+                        statusEl.style.color = Number(data.ok) ? 'var(--success-green)' : 'var(--warning-amber)';
+                    }
+                }
+            } else if (data.type === "map") {
+                const posEl = document.getElementById('robotPos');
+                const displayX = data.cx ? data.cx - 1 : 0;
+                const displayY = data.cy ? data.cy - 1 : 0;
+                if (posEl) posEl.textContent = `(${displayX}, ${displayY}) - ${data.dir}`;
+                drawMaze(data.cx, data.cy, data.dir, data.data);
             }
         }
+
+        function drawMaze(cx, cy, dir, mapStr) {
+            const canvas = document.getElementById('mazeCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, 0, w, h);
+
+            const C = 48; // Kich thuoc o co (Cell)
+            const T = 8;  // Do day tuong (Wall thickness)
+
+            function getVal(mx, my) {
+                if (!mapStr) return 0;
+                const idx = mx * 17 + my;
+                return parseInt(mapStr[idx] || '0');
+            }
+
+            // 1. Ve 8x8 O Co (Cells)
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const x = (c + 1) * T + c * C;
+                    const y = (r + 1) * T + r * C;
+                    ctx.fillStyle = '#101827';
+                    ctx.fillRect(x, y, C, C);
+
+                    // Nhãn tọa độ (0,0 đến 7,7)
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                    ctx.font = '10px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${r},${c}`, x + C / 2, y + C / 2);
+                }
+            }
+
+            // 2. Ve 9x9 Cot Goc (Posts)
+            for (let r = 0; r <= 8; r++) {
+                for (let c = 0; c <= 8; c++) {
+                    const x = c * T + c * C;
+                    const y = r * T + r * C;
+                    ctx.fillStyle = '#6366f1';
+                    ctx.fillRect(x, y, T, T);
+                }
+            }
+
+            // 3. Ve Tuong Ngang (Horizontal Walls - 9 hang)
+            for (let r = 0; r <= 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const mx = r * 2;
+                    const my = c * 2 + 1;
+                    const val = getVal(mx, my);
+
+                    const x = (c + 1) * T + c * C;
+                    const y = r * T + r * C;
+
+                    if (val === 1 || val === 3) {
+                        ctx.fillStyle = '#ef4444';
+                        ctx.shadowColor = '#ef4444';
+                        ctx.shadowBlur = 4;
+                        ctx.fillRect(x, y, C, T);
+                        ctx.shadowBlur = 0;
+                    } else if (val === 5) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.fillRect(x, y, C, T);
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+                        ctx.fillRect(x, y, C, T);
+                    }
+                }
+            }
+
+            // 4. Ve Tuong Doc (Vertical Walls - 8 hang)
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c <= 8; c++) {
+                    const mx = r * 2 + 1;
+                    const my = c * 2;
+                    const val = getVal(mx, my);
+
+                    const x = c * T + c * C;
+                    const y = (r + 1) * T + r * C;
+
+                    if (val === 1 || val === 2) {
+                        ctx.fillStyle = '#ef4444';
+                        ctx.shadowColor = '#ef4444';
+                        ctx.shadowBlur = 4;
+                        ctx.fillRect(x, y, T, C);
+                        ctx.shadowBlur = 0;
+                    } else if (val === 4) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.fillRect(x, y, T, C);
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+                        ctx.fillRect(x, y, T, C);
+                    }
+                }
+            }
+
+            // 5. Ve Robot
+            if (cx !== undefined && cy !== undefined) {
+                const r = cx - 1;
+                const c = cy - 1;
+                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    const rx = (c + 1) * T + c * C + C / 2;
+                    const ry = (r + 1) * T + r * C + C / 2;
+
+                    ctx.shadowColor = '#00f2fe';
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = '#00f2fe';
+                    ctx.beginPath();
+                    ctx.arc(rx, ry, C * 0.35, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ctx.strokeStyle = '#090d16';
+                    ctx.lineWidth = 3;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    let dx = 0, dy = 0;
+                    if (dir === 'N') dy = -C * 0.28;
+                    else if (dir === 'S') dy = C * 0.28;
+                    else if (dir === 'E') dx = C * 0.28;
+                    else if (dir === 'W') dx = -C * 0.28;
+                    ctx.lineTo(rx + dx, ry + dy);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => { drawMaze(1, 1, 'E', ''); });
 
         function updateBadge(type, val) {
             const badge = document.getElementById(`valBadge${type}`);
@@ -1026,6 +1219,7 @@
         function stepParam(param, delta) {
             const type = param.toUpperCase();
             const slider = document.getElementById(`slider${type}`);
+            if (!slider) return;
             let val = parseFloat(slider.value) + delta;
             if (val < parseFloat(slider.min)) val = parseFloat(slider.min);
             if (val > parseFloat(slider.max)) val = parseFloat(slider.max);
@@ -1035,7 +1229,9 @@
         }
 
         function applyParam(type) {
-            const val = document.getElementById(`slider${type}`).value;
+            const slider = document.getElementById(`slider${type}`);
+            if (!slider) return;
+            const val = slider.value;
             sendCmd(`SET_${type}=${val}`);
         }
     </script>

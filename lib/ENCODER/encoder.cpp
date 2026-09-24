@@ -1,51 +1,63 @@
 #include "encoder.h"
+#include "RobotConfig.h"
 
-// Cấp phát bộ nhớ và khởi tạo giá trị ban đầu cho các biến đếm
-volatile long enc1A_count = 0;
-volatile long enc1B_count = 0;
-volatile long enc2A_count = 0;
-volatile long enc2B_count = 0;
+Encoder encoder;
+Encoder* Encoder::instance = nullptr;
 
-volatile uint8_t enc1State = 0;
-volatile uint8_t enc2State = 0;
+static void IRAM_ATTR isrLeftTrampoline() { if (Encoder::instance) Encoder::instance->isrLeft(); }
+static void IRAM_ATTR isrRightTrampoline() { if (Encoder::instance) Encoder::instance->isrRight(); }
 
-// Bảng chuyển trạng thái quadrature: mỗi bước hợp lệ là +1 hoặc -1.
-const int8_t encoderTransition[16] = {
-    0, 1, -1, 0,
-    -1, 0, 0, 1,
-    1, 0, 0, -1,
-    0, -1, 1, 0
-};
+void Encoder::begin() {
+  instance = this;
 
-uint8_t readEncoderState(uint8_t pinA, uint8_t pinB) {
-    return (digitalRead(pinA) << 1) | digitalRead(pinB);
+  pinMode(ENC_LEFT_A, INPUT);
+  pinMode(ENC_LEFT_B, INPUT);
+  pinMode(ENC_RIGHT_A, INPUT);
+  pinMode(ENC_RIGHT_B, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(ENC_LEFT_A), isrLeftTrampoline, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENC_RIGHT_A), isrRightTrampoline, CHANGE);
 }
 
-void IRAM_ATTR enc1_ISR() {
-    uint8_t newState = readEncoderState(ENC1_A, ENC1_B);
-    enc1A_count += encoderTransition[(enc1State << 2) | newState];
-    enc1State = newState;
+void IRAM_ATTR Encoder::isrLeft() {
+  int a = digitalRead(ENC_LEFT_A);
+  int b = digitalRead(ENC_LEFT_B);
+  if (a != b) _left--; else _left++;
 }
 
-void IRAM_ATTR enc2_ISR() {
-    uint8_t newState = readEncoderState(ENC2_A, ENC2_B);
-    enc2A_count += encoderTransition[(enc2State << 2) | newState];
-    enc2State = newState;
+void IRAM_ATTR Encoder::isrRight() {
+  int a = digitalRead(ENC_RIGHT_A);
+  int b = digitalRead(ENC_RIGHT_B);
+  if (a != b) _right++; else _right--;
 }
 
-void setupEncoders() {
-    // Cấu hình chân đầu vào có điện trở kéo lên
-    pinMode(ENC1_A, INPUT_PULLUP);
-    pinMode(ENC1_B, INPUT_PULLUP);
-    pinMode(ENC2_A, INPUT_PULLUP);
-    pinMode(ENC2_B, INPUT_PULLUP);
+void Encoder::reset() {
+  noInterrupts();
+  _left = 0;
+  _right = 0;
+  interrupts();
+}
 
-    enc1State = readEncoderState(ENC1_A, ENC1_B);
-    enc2State = readEncoderState(ENC2_A, ENC2_B);
+long Encoder::left() const  { return _left; }
+long Encoder::right() const { return _right; }
 
-    // Bắt mọi thay đổi của A và B để không bỏ qua chiều quay.
-    attachInterrupt(digitalPinToInterrupt(ENC1_A), enc1_ISR, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(ENC1_B), enc1_ISR, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(ENC2_A), enc2_ISR, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(ENC2_B), enc2_ISR, CHANGE);
+int Encoder::spinCount() const {
+  noInterrupts();
+  long l = _left, r = _right;
+  interrupts();
+  return (abs(l) + abs(r)) / 2;
+}
+
+float Encoder::distanceLeftCm() const {
+  float circumference = 2.0f * WHEEL_RADIUS_CM * PI;
+  return (left() / ENC_PULSES_PER_REV) * circumference;
+}
+
+float Encoder::distanceRightCm() const {
+  float circumference = 2.0f * WHEEL_RADIUS_CM * PI;
+  return (right() / ENC_PULSES_PER_REV) * circumference;
+}
+
+float Encoder::distanceAvgCm() const {
+  return (fabs(distanceLeftCm()) + fabs(distanceRightCm())) / 2.0f;
 }

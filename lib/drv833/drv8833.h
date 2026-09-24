@@ -1,17 +1,18 @@
-#ifndef DRV8833_H
-#define DRV8833_H
-
+#pragma once
 #include <Arduino.h>
 
-// Định nghĩa chân kết nối DRV8833
-#define M1_IN1 7
-#define M1_IN2 6
-#define M2_IN1 15
-#define M2_IN2 14
+// DRV8833: mỗi bánh dùng 2 chân IN (PWM trực tiếp trên IN, không có chân PWM riêng
+// như TB6612). speed âm = lùi, speed dương = tiến, 0 = thả trôi.
+class DRV8833 {
+public:
+  void begin();
+  void run(int speedLeft, int speedRight);  // -255..255
+  void stop();                               // thả trôi (coast)
+  void brake();                              // phanh cứng (short brake)
+  void sleep(bool on);                       // true = ngủ (tắt IC), false = thức
 
-void setupMotors();
-void motorForward();
-void motorBackward();
-void motorStop();
+private:
+  void driveOne(int in1Pin, int in2Pin, int speed);
+};
 
-#endif
+extern DRV8833 motor;

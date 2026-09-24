@@ -1,50 +1,23 @@
-
-#ifndef VL53SENSORS_H
-#define VL53SENSORS_H
-
+#pragma once
 #include <Arduino.h>
-#include <Wire.h>
-#include <VL53L0X.h>
+#include <VL53L0X.h>   // lib_deps: pololu/VL53L0X
 
-// ================= PIN =================
-#define SDA_PIN        19
-#define SCL_PIN        18
-
-#define XSHUT_LEFT     20
-#define XSHUT_FRONT    9
-#define XSHUT_RIGHT    8
-
-// ================= ADDRESS =================
-#define ADDRESS_LEFT   0x30
-#define ADDRESS_FRONT  0x31
-#define ADDRESS_RIGHT  0x32
-
-// ================= CLASS =================
-class VL53Sensors {
-public:
-    VL53Sensors();
-
-    void begin();
-
-    uint16_t readLeft();
-    uint16_t readFront();
-    uint16_t readRight();
-
-    bool leftOK();
-    bool frontOK();
-    bool rightOK();
-
-private:
-    VL53L0X sensorLeft;
-    VL53L0X sensorFront;
-    VL53L0X sensorRight;
-
-    bool leftReady;
-    bool frontReady;
-    bool rightReady;
-
-    void setupSensors();
+struct WallDist {
+  int front_mm, left_mm, right_mm;
+  bool front_ok, left_ok, right_ok;
 };
 
-#endif
+class VL53Sensors {
+public:
+  bool begin();                 // set địa chỉ I2C riêng cho từng cảm biến qua XSHUT
+  WallDist read();               // đọc cả 3, đơn vị mm
+  bool frontWall(int thresholdMm = -1);
+  bool leftWall(int thresholdMm = -1);
+  bool rightWall(int thresholdMm = -1);
 
+private:
+  VL53L0X _front, _left, _right;
+  bool _ok = false;
+};
+
+extern VL53Sensors tof;
