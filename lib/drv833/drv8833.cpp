@@ -36,6 +36,8 @@ void DRV8833::driveOne(int in1Pin, int in2Pin, int speed) {
 }
 
 void DRV8833::run(int speedLeft, int speedRight) {
+  if (MOTOR_LEFT_INVERT)  speedLeft  = -speedLeft;
+  if (MOTOR_RIGHT_INVERT) speedRight = -speedRight;
   driveOne(MOTOR_LEFT_IN1, MOTOR_LEFT_IN2, speedLeft);
   driveOne(MOTOR_RIGHT_IN1, MOTOR_RIGHT_IN2, speedRight);
 }

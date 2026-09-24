@@ -30,11 +30,20 @@
 #define MOTOR_RIGHT_IN2 M2_IN2
 #define MOTOR_SLEEP_PIN 21
 
+// Đảo chiều quay động cơ (1 = đảo) — dùng khi dây motor đấu ngược,
+// để speed dương luôn là TIẾN.
+#define MOTOR_LEFT_INVERT  1
+#define MOTOR_RIGHT_INVERT 1
+
 // ================= ENCODER PINS =================
 #define ENC_LEFT_A  4
 #define ENC_LEFT_B  5
 #define ENC_RIGHT_A 16
 #define ENC_RIGHT_B 17
+
+// Đảo dấu đếm encoder (1 = đảo) — chỉnh sao cho robot đi TIẾN thì cả 2 bánh đếm DƯƠNG.
+#define ENC_LEFT_INVERT  0
+#define ENC_RIGHT_INVERT 0
 
 // ================= MOBILITY / NAVIGATION CONSTANTS =================
 #define WHEEL_RADIUS_CM 3.2f
