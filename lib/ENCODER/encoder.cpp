@@ -38,8 +38,8 @@ void Encoder::reset() {
   interrupts();
 }
 
-long Encoder::left() const  { return _left; }
-long Encoder::right() const { return _right; }
+long Encoder::left() const  { return ENC_LEFT_INVERT  ? -_left  : _left; }
+long Encoder::right() const { return ENC_RIGHT_INVERT ? -_right : _right; }
 
 int Encoder::spinCount() const {
   noInterrupts();
