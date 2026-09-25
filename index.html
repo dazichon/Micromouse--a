@@ -426,6 +426,56 @@
             transition: all 0.2s;
         }
 
+        /* CẤU HÌNH MÊ CUNG */
+        .maze-cfg {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+            justify-content: center;
+            margin: 4px 0 16px;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .maze-cfg label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            color: var(--text-muted);
+            text-align: left;
+        }
+
+        .maze-cfg input, .maze-cfg select {
+            width: 84px;
+            padding: 6px 8px;
+            background: #0b1220;
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .maze-cfg .btn-apply {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+
+        .maze-cfg-hint {
+            flex-basis: 100%;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        #mazeCanvas {
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+
         .btn-apply:hover {
             background: var(--primary-cyan);
             color: #000;
@@ -554,6 +604,71 @@
         .sensor-left-tag { left: -16px; top: 50%; transform: translateY(-50%); }
         .sensor-right-tag { right: -16px; top: 50%; transform: translateY(-50%); }
 
+        /* KHỐI CẢM BIẾN THU NHỎ — đặt cạnh bản đồ ở Chế độ 3 */
+        .robot-visual-sm {
+            width: 148px;
+            height: 148px;
+            flex: 0 0 auto;
+            margin: 0;
+            position: relative;
+            background: rgba(20, 30, 50, 0.6);
+            border: 2px solid rgba(0, 242, 254, 0.3);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .robot-visual-sm .sensor-tag {
+            padding: 3px 6px;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .sensor-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+            flex: 0 0 auto;
+        }
+
+        .sensor-panel-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .sensor-stats {
+            width: 180px;
+            display: grid;
+            gap: 6px;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .sensor-stats div {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+        }
+
+        .sensor-stats span { color: var(--text-muted); }
+        .sensor-stats b { color: var(--primary-cyan); font-family: monospace; }
+
+        .maze-with-sensors {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
         /* CONSOLE TERMINAL */
         .terminal {
             background: #050811;
@@ -628,9 +743,8 @@
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab(1)">🎯 Chế Độ 1: Test Quay Góc & Căn Chỉnh</button>
             <button class="tab-btn" onclick="switchTab(2)">⚙️ Chế Độ 2: Căn Chỉnh PID Bám Tường</button>
-            <button class="tab-btn" onclick="switchTab(3)">📡 Chế Độ 3: Cảm Biến Khoảng Cách</button>
-            <button class="tab-btn" onclick="switchTab(4)">🗺️ Chế Độ 4: Bản Đồ Mê Cung 2D (Live)</button>
-            <button class="tab-btn" onclick="switchTab(5)">🖥️ Terminal Console BLE</button>
+            <button class="tab-btn" onclick="switchTab(3)">🗺️ Chế Độ 3: Bản Đồ Mê Cung 2D (Live)</button>
+            <button class="tab-btn" onclick="switchTab(4)">🖥️ Terminal Console BLE</button>
         </div>
 
         <!-- TAB 1: TEST QUAY GÓC & CĂN CHỈNH -->
@@ -653,6 +767,9 @@
                             <div class="yaw-readout">
                                 <div class="yaw-value" id="yawVal">0.0°</div>
                                 <div class="yaw-label">Góc Yaw Hiện Tại</div>
+                                <div class="yaw-label" style="margin-top: 6px; text-transform: none;">
+                                    Tốc độ quay: <b id="gyroRate">--</b> °/s · Offset: <b id="gyroBias">--</b> °/s
+                                </div>
                             </div>
                         </div>
 
@@ -689,13 +806,12 @@
                         <div class="param-group">
                             <div class="param-header">
                                 <div class="param-title">LEFT_COMPENSATION (Bù Rẽ Trái):</div>
-                                <div class="param-value-badge" id="valBadgeLC">18.0°</div>
+                                <div class="param-value-badge" id="valBadgeLC">2.0°</div>
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('lc', -0.5)">-</button>
-                                <input type="range" class="slider-input" id="sliderLC" min="0" max="35" step="0.5" value="18.0" aria-label="LEFT_COMPENSATION" oninput="updateBadge('LC', this.value)">
+                                <input type="range" class="slider-input" id="sliderLC" min="0" max="35" step="0.5" value="2.0" aria-label="LEFT_COMPENSATION" oninput="updateBadge('LC', this.value)" onchange="applyParam('LC')">
                                 <button class="btn-step" onclick="stepParam('lc', 0.5)">+</button>
-                                <button class="btn-apply" onclick="applyParam('LC')">Gửi</button>
                             </div>
                         </div>
 
@@ -703,13 +819,12 @@
                         <div class="param-group">
                             <div class="param-header">
                                 <div class="param-title">RIGHT_COMPENSATION (Bù Rẽ Phải):</div>
-                                <div class="param-value-badge" id="valBadgeRC">8.0°</div>
+                                <div class="param-value-badge" id="valBadgeRC">2.0°</div>
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('rc', -0.5)">-</button>
-                                <input type="range" class="slider-input" id="sliderRC" min="0" max="35" step="0.5" value="8.0" aria-label="RIGHT_COMPENSATION" oninput="updateBadge('RC', this.value)">
+                                <input type="range" class="slider-input" id="sliderRC" min="0" max="35" step="0.5" value="2.0" aria-label="RIGHT_COMPENSATION" oninput="updateBadge('RC', this.value)" onchange="applyParam('RC')">
                                 <button class="btn-step" onclick="stepParam('rc', 0.5)">+</button>
-                                <button class="btn-apply" onclick="applyParam('RC')">Gửi</button>
                             </div>
                         </div>
 
@@ -717,26 +832,28 @@
                         <div class="param-group">
                             <div class="param-header">
                                 <div class="param-title">TURN_SPEED (Tốc độ PWM 0-255):</div>
-                                <div class="param-value-badge" id="valBadgeSPD">90</div>
+                                <div class="param-value-badge" id="valBadgeSPD">130</div>
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('spd', -5)">-</button>
-                                <input type="range" class="slider-input" id="sliderSPD" min="40" max="255" step="5" value="90" aria-label="TURN_SPEED" oninput="updateBadge('SPD', this.value)">
+                                <input type="range" class="slider-input" id="sliderSPD" min="70" max="255" step="5" value="130" aria-label="TURN_SPEED" oninput="updateBadge('SPD', this.value)" onchange="applyParam('SPD')">
                                 <button class="btn-step" onclick="stepParam('spd', 5)">+</button>
-                                <button class="btn-apply" onclick="applyParam('SPD')">Gửi</button>
                             </div>
                         </div>
 
                         <!-- ACTION TEST BUTTONS -->
                         <div class="action-grid">
-                            <button class="btn-turn-left" onclick="sendCmd('START')">
-                                <span>▶</span> BẮT ĐẦU EXPLORE
+                            <button class="btn-turn-left" onclick="testTurn('TURN_L', 90)">
+                                <span>↺</span> QUAY TRÁI 90°
                             </button>
-                            <button class="btn-turn-right" onclick="sendCmd('FAST')">
-                                ⚡ CHẠY FAST RUN <span>▶</span>
+                            <button class="btn-turn-right" onclick="testTurn('TURN_R', 90)">
+                                QUAY PHẢI 90° <span>↻</span>
                             </button>
-                            <button class="btn-pid-run" onclick="sendCmd('STATUS')">
-                                📊 XEM TRẠNG THÁI ROBOT
+                            <button class="btn-pid-run" onclick="testTurn('TURN_180', 180)">
+                                🔄 QUAY 180°
+                            </button>
+                            <button class="btn-turn-left" onclick="sendCmd('GYRO_CAL')" title="Đặt xe đứng yên hoàn toàn rồi bấm — đo lại độ lệch gyro và đưa góc về 0°">
+                                ⚖️ HIỆU CHUẨN GYRO (xe đứng yên)
                             </button>
                             <button class="btn-brake" onclick="sendCmd('STOP')">
                                 🛑 DỪNG ROBOT
@@ -758,13 +875,12 @@
                 <div class="param-group">
                     <div class="param-header">
                         <div class="param-title">Kp (Hệ Số Tỉ Lệ - Proportional):</div>
-                        <div class="param-value-badge" id="valBadgeKP">1.20</div>
+                        <div class="param-value-badge" id="valBadgeKP">0.25</div>
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('kp', -0.1)">-</button>
-                        <input type="range" class="slider-input" id="sliderKP" min="0.0" max="5.0" step="0.05" value="1.20" aria-label="Kp" oninput="updateBadge('KP', this.value)">
+                        <input type="range" class="slider-input" id="sliderKP" min="0.0" max="5.0" step="0.05" value="0.25" aria-label="Kp" oninput="updateBadge('KP', this.value)" onchange="applyParam('KP')">
                         <button class="btn-step" onclick="stepParam('kp', 0.1)">+</button>
-                        <button class="btn-apply" onclick="applyParam('KP')">Gửi Kp</button>
                     </div>
                 </div>
 
@@ -772,13 +888,12 @@
                 <div class="param-group">
                     <div class="param-header">
                         <div class="param-title">Ki (Hệ Số Tích Phân - Integral):</div>
-                        <div class="param-value-badge" id="valBadgeKI">0.005</div>
+                        <div class="param-value-badge" id="valBadgeKI">0.000</div>
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('ki', -0.001)">-</button>
-                        <input type="range" class="slider-input" id="sliderKI" min="0.000" max="0.050" step="0.001" value="0.005" aria-label="Ki" oninput="updateBadge('KI', this.value)">
+                        <input type="range" class="slider-input" id="sliderKI" min="0.000" max="0.050" step="0.001" value="0" aria-label="Ki" oninput="updateBadge('KI', this.value)" onchange="applyParam('KI')">
                         <button class="btn-step" onclick="stepParam('ki', 0.001)">+</button>
-                        <button class="btn-apply" onclick="applyParam('KI')">Gửi Ki</button>
                     </div>
                 </div>
 
@@ -786,13 +901,12 @@
                 <div class="param-group">
                     <div class="param-header">
                         <div class="param-title">Kd (Hệ Số Vi Phân - Derivative):</div>
-                        <div class="param-value-badge" id="valBadgeKD">0.25</div>
+                        <div class="param-value-badge" id="valBadgeKD">0.80</div>
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('kd', -0.05)">-</button>
-                        <input type="range" class="slider-input" id="sliderKD" min="0.00" max="2.00" step="0.05" value="0.25" aria-label="Kd" oninput="updateBadge('KD', this.value)">
+                        <input type="range" class="slider-input" id="sliderKD" min="0.00" max="2.00" step="0.05" value="0.80" aria-label="Kd" oninput="updateBadge('KD', this.value)" onchange="applyParam('KD')">
                         <button class="btn-step" onclick="stepParam('kd', 0.05)">+</button>
-                        <button class="btn-apply" onclick="applyParam('KD')">Gửi Kd</button>
                     </div>
                 </div>
 
@@ -815,43 +929,110 @@
             </div>
         </div>
 
-        <!-- TAB 3: CẢM BIẾN KHOẢNG CÁCH -->
+        <!-- TAB 3: BẢN ĐỒ MÊ CUNG 2D REALTIME (kích thước lấy từ robot) -->
         <div class="tab-panel" id="tab3">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">📡 Cảm Biến Khoảng Cách VL53L0X (mm)</div>
-                </div>
-
-                <div class="robot-visual">
-                    <div class="sensor-tag sensor-top">TRƯỚC: <span id="distFront">--</span> mm</div>
-                    <div class="sensor-tag sensor-left-tag">TRÁI: <span id="distLeft">--</span> mm</div>
-                    <div class="sensor-tag sensor-right-tag">PHẢI: <span id="distRight">--</span> mm</div>
-                    <div style="text-align: center; color: var(--text-muted); font-size: 13px;">
-                        🤖<br>ROBOT MICROMOUSE
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 4: BẢN ĐỒ MÊ CUNG 2D REALTIME (8x8) -->
-        <div class="tab-panel" id="tab4">
             <div class="card" style="text-align: center;">
                 <div class="card-header">
-                    <div class="card-title">🗺️ Bản Đồ Mê Cung Realtime (8x8 Grid)</div>
+                    <div class="card-title">🗺️ Bản Đồ Mê Cung Realtime <span id="mazeSizeLabel">5x5</span></div>
                     <div style="font-size: 13px; color: var(--text-muted);">
-                        Vị trí hiện tại: <span id="robotPos" style="color: var(--primary-cyan); font-weight: 700;">(0, 0) - EAST</span>
+                        Vị trí hiện tại: <span id="robotPos" style="color: var(--primary-cyan); font-weight: 700;">(1, 1) - E</span>
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
-                    <canvas id="mazeCanvas" width="456" height="456" style="border: 2px solid var(--primary-cyan); border-radius: 12px; background: #090d16; box-shadow: 0 0 25px rgba(0,242,254,0.25);"></canvas>
+                <!-- ĐIỀU KHIỂN CHẠY MÊ CUNG -->
+                <div class="maze-cfg">
+                    <div class="param-group" style="flex: 1 1 280px; margin-bottom: 0;">
+                        <div class="param-header">
+                            <div class="param-title">TỐC ĐỘ CHẠY THẲNG (PWM 0-160):</div>
+                            <div class="param-value-badge" id="valBadgeDSPD">60</div>
+                        </div>
+                        <div class="slider-controls">
+                            <button class="btn-step" onclick="stepParam('dspd', -10)">-</button>
+                            <input type="range" class="slider-input" id="sliderDSPD" min="0" max="160" step="5" value="60" aria-label="DRIVE_SPEED" oninput="updateBadge('DSPD', this.value)" onchange="applyParam('DSPD')">
+                            <button class="btn-step" onclick="stepParam('dspd', 10)">+</button>
+                        </div>
+                    </div>
+                    <div class="action-grid" style="flex: 1 1 100%; margin-top: 0; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                        <button class="btn-pid-run" onclick="sendCmd('START')">▶ BẮT ĐẦU KHÁM PHÁ</button>
+                        <button class="btn-turn-left" onclick="sendCmd('UPDATE')" title="Chạy lại từ (1,1), giữ bản đồ cũ, đo lại và sửa tường ở những ô đi qua">🔄 CẬP NHẬT MÊ CUNG</button>
+                        <button class="btn-turn-right" onclick="sendCmd('FAST')">⚡ CHẠY FAST RUN</button>
+                        <button class="btn-brake" onclick="sendCmd('STOP')">🛑 DỪNG ROBOT</button>
+                        <button class="btn-brake" onclick="resetMap()">🗑️ RESET TOÀN BỘ MAP</button>
+                    </div>
                 </div>
 
-                <!-- CHÚ THÍCH DẠNG LƯỚI 8x8 -->
+                <!-- ĐỘ DÀI 1 Ô: robot đi đủ quãng này (đo bằng encoder) thì dừng — gửi SET_CELL=cm, lưu flash -->
+                <div class="maze-cfg">
+                    <div class="param-group" style="flex: 1 1 280px; margin-bottom: 0;">
+                        <div class="param-header">
+                            <div class="param-title">ĐỘ DÀI 1 Ô (30–300 xung encoder):</div>
+                            <div class="param-value-badge" id="valBadgeCELL">100 xung</div>
+                        </div>
+                        <div class="slider-controls">
+                            <button class="btn-step" onclick="stepParam('cell', -5)">-</button>
+                            <input type="range" class="slider-input" id="sliderCELL" min="30" max="300" step="5" value="100" aria-label="CELL_LEN" oninput="updateBadge('CELL', this.value)" onchange="applyParam('CELL')">
+                            <button class="btn-step" onclick="stepParam('cell', 5)">+</button>
+                        </div>
+                    </div>
+                    <div class="maze-cfg-hint">Robot đi quá xa → <b>giảm</b>, đi chưa tới → <b>tăng</b>. Con chuột trên web sang ô mới khi robot đi được nửa ô (theo độ dài đang đặt). Kéo thanh trượt / bấm +, - là robot nhận luôn.</div>
+                </div>
+
+                <!-- ĐIỀU KHIỂN TAY TỪNG Ô: mỗi lần bấm robot quay (nếu cần) rồi đi đúng 1 ô và đo lại tường -->
+                <div class="maze-cfg">
+                    <div class="param-title" style="flex: 1 1 100%;">🎮 ĐIỀU KHIỂN TỪNG Ô:</div>
+                    <div class="action-grid" style="flex: 1 1 100%; margin-top: 0; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                        <button class="btn-turn-left" onclick="sendCmd('STEP_L')">↰ TRÁI 90° + 1 Ô</button>
+                        <button class="btn-pid-run" onclick="sendCmd('STEP_F')">⬆ THẲNG 1 Ô</button>
+                        <button class="btn-turn-right" onclick="sendCmd('STEP_R')">↱ PHẢI 90° + 1 Ô</button>
+                        <button class="btn-brake" onclick="sendCmd('STEP_B')">↩ QUAY ĐẦU</button>
+                    </div>
+                    <div class="maze-cfg-hint">Chờ robot dừng hẳn rồi mới bấm tiếp. Có tường ngay trước mặt (&lt; 230mm) thì robot chỉ quay, không đi.</div>
+                </div>
+
+                <!-- CẤU HÌNH MÊ CUNG: gửi SET_MAZE=n,hàng,cột,cỡ — robot lưu vào flash -->
+                <div class="maze-cfg">
+                    <label>Kích thước (ô)
+                        <input type="number" id="cfgCells" min="2" max="16" value="5" onchange="queueMazeConfig()">
+                    </label>
+                    <label>Hàng đích
+                        <input type="number" id="cfgGoalRow" min="1" max="16" value="3" onchange="queueMazeConfig()">
+                    </label>
+                    <label>Cột đích
+                        <input type="number" id="cfgGoalCol" min="1" max="16" value="3" onchange="queueMazeConfig()">
+                    </label>
+                    <label>Vùng đích
+                        <select id="cfgGoalSize" onchange="queueMazeConfig()">
+                            <option value="1">1x1</option>
+                            <option value="2">2x2</option>
+                        </select>
+                    </label>
+                    <div class="maze-cfg-hint">Đổi ô nào là robot nhận luôn. Bấm vào 1 ô trên bản đồ để chọn đích. Ô đánh số từ 1, xuất phát ở (1,1). Đổi cấu hình sẽ xoá bản đồ đang khám phá. <b>Cập nhật mê cung</b>: robot chạy lại mà không xoá bản đồ, chỉ sửa những tường đã thay đổi rồi lưu lại.</div>
+                </div>
+
+                <div class="maze-with-sensors" style="margin-top: 10px;">
+                    <div class="sensor-panel">
+                    <div class="sensor-panel-title">📡 CẬP NHẬT CẢM BIẾN</div>
+                    <div class="robot-visual-sm">
+                        <div class="sensor-tag sensor-top">TRƯỚC: <span id="distFrontT4">--</span> mm</div>
+                        <div class="sensor-tag sensor-left-tag">TRÁI: <span id="distLeftT4">--</span> mm</div>
+                        <div class="sensor-tag sensor-right-tag">PHẢI: <span id="distRightT4">--</span> mm</div>
+                        <div style="text-align: center; color: var(--text-muted); font-size: 20px;">🤖</div>
+                    </div>
+                    <div class="sensor-stats">
+                        <div><span>Góc xoay</span><b id="yawT4">--°</b></div>
+                        <div><span>Encoder trái</span><b id="encL">--</b></div>
+                        <div><span>Encoder phải</span><b id="encR">--</b></div>
+                        <div><span>Ô vừa đi</span><b id="encD">--</b></div>
+                    </div>
+                    </div>
+                    <canvas id="mazeCanvas" width="456" height="456" style="border: 2px solid var(--primary-cyan); border-radius: 12px; background: #090d16; box-shadow: 0 0 25px rgba(0,242,254,0.25); max-width: 100%;"></canvas>
+                </div>
+
+                <!-- CHÚ THÍCH -->
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; text-align: left; background: rgba(0,0,0,0.3); padding: 14px 20px; border-radius: 12px; border: 1px solid var(--card-border); font-size: 13px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="display:inline-block; width:16px; height:16px; background:#00f2fe; border-radius:50%; box-shadow:0 0 8px #00f2fe;"></span>
-                        <span><b>Con Chuột (Robot):</b> Hình tròn xanh lam (Vị trí 0..7)</span>
+                        <span><b>Con Chuột (Robot):</b> Hình tròn xanh lam</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="display:inline-block; width:18px; height:6px; background:#ef4444; border-radius:2px; box-shadow:0 0 6px #ef4444;"></span>
@@ -862,15 +1043,19 @@
                         <span><b>Tường Chưa Khám Phá (Xám):</b> Chưa phát hiện tường</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display:inline-block; width:14px; height:14px; background:rgba(16,185,129,0.35); border:1px solid #10b981; border-radius:3px;"></span>
+                        <span><b>Ô Đích (Xanh lá):</b> Vùng robot cần tới</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="display:inline-block; width:14px; height:14px; background:#101827; border:1px solid rgba(255,255,255,0.1); border-radius:3px;"></span>
-                        <span><b>Ô Cờ 8x8 (Đen nhạt):</b> Không gian cho xe di chuyển</span>
+                        <span><b>Ô Cờ (Đen nhạt):</b> Không gian cho xe di chuyển</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- TAB 5: TERMINAL CONSOLE -->
-        <div class="tab-panel" id="tab5">
+        <div class="tab-panel" id="tab4">
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">🖥️ Nhật Ký BLE Terminal (Real-time)</div>
@@ -880,7 +1065,7 @@
                     <div class="terminal-line sys">[SYSTEM] Sẵn sàng kết nối Bluetooth LE...</div>
                 </div>
                 <div class="terminal-input-group">
-                    <input type="text" class="terminal-input" id="cmdInput" aria-label="Terminal command input" placeholder="Nhập lệnh (vd: START, FAST, STOP, STATUS, GET)..." onkeydown="if(event.key==='Enter') sendCustomCmd()">
+                    <input type="text" class="terminal-input" id="cmdInput" aria-label="Terminal command input" placeholder="Nhập lệnh (vd: START, UPDATE, FAST, STOP, STATUS, GET)..." onkeydown="if(event.key==='Enter') sendCustomCmd()">
                     <button class="btn-apply" style="padding: 10px 20px;" onclick="sendCustomCmd()">GỬI LỆNH</button>
                 </div>
             </div>
@@ -917,15 +1102,8 @@
             document.querySelectorAll('.tab-panel').forEach(panel => {
                 panel.classList.toggle('active', panel.id === `tab${idx}`);
             });
-            if (idx === 4) {
-                setTimeout(() => {
-                    if (typeof drawMaze === 'function') {
-                        drawMaze(typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.cx : 1, 
-                                 typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.cy : 1, 
-                                 typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.dir : 'E', 
-                                 typeof lastMapData !== 'undefined' && lastMapData ? lastMapData.data : '');
-                    }
-                }, 50);
+            if (idx === 3) {
+                setTimeout(redrawMaze, 50);
             }
         }
 
@@ -952,6 +1130,7 @@
                 txCharacteristic = await service.getCharacteristic(TX_CHARACTERISTIC_UUID);
 
                 await txCharacteristic.startNotifications();
+                bleRxBuffer = '';
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleBLEData);
 
                 updateConnectUI(true);
@@ -1018,13 +1197,18 @@
             }
         }
 
-        function handleBLEData(event) {
-            const value = event.target.value;
-            const decoder = new TextDecoder('utf-8');
-            const str = decoder.decode(value).trim();
-            if (!str) return;
+        // Robot chia gói dài (vd. map) thành nhiều notify theo MTU,
+        // nên phải gom lại và chỉ xử lý khi đã nhận đủ 1 dòng ('\n').
+        let bleRxBuffer = '';
+        const bleDecoder = new TextDecoder('utf-8');
 
-            const lines = str.split(/\r?\n/);
+        function handleBLEData(event) {
+            bleRxBuffer += bleDecoder.decode(event.target.value, { stream: true });
+
+            const lines = bleRxBuffer.split(/\r?\n/);
+            bleRxBuffer = lines.pop();   // phần cuối chưa có '\n' => chờ notify tiếp theo
+            if (bleRxBuffer.length > 4096) bleRxBuffer = '';
+
             lines.forEach(line => {
                 const clean = line.trim();
                 if (!clean) return;
@@ -1042,32 +1226,171 @@
             });
         }
 
+        let needleAngle = 0;   // góc kim liên tục (không bị cắt ±180) để animation mượt
+
         function parseJSONPacket(data) {
             if (data.type === "telemetry") {
                 if (data.yaw !== undefined) {
                     const yaw = Number(data.yaw);
                     document.getElementById('yawVal').textContent = `${yaw.toFixed(1)}°`;
-                    document.getElementById('needle').style.transform = `rotate(${yaw}deg)`;
+                    if (data.gr !== undefined) document.getElementById('gyroRate').textContent = Number(data.gr).toFixed(2);
+                    if (data.gb !== undefined) document.getElementById('gyroBias').textContent = Number(data.gb).toFixed(2);
+                    // quay kim theo đường ngắn nhất (tránh xoay cả vòng khi góc nhảy 180 -> -180)
+                    needleAngle += ((yaw - needleAngle) % 360 + 540) % 360 - 180;
+                    document.getElementById('needle').style.transform = `rotate(${needleAngle}deg)`;
                 }
 
-                if (data.l !== undefined) document.getElementById('distLeft').textContent = Number(data.l);
-                if (data.f !== undefined) document.getElementById('distFront').textContent = Number(data.f);
-                if (data.r !== undefined) document.getElementById('distRight').textContent = Number(data.r);
-
-                if (data.ok !== undefined) {
-                    const statusEl = document.getElementById('resStatus');
-                    if (statusEl) {
-                        statusEl.textContent = Number(data.ok) ? 'SENSOR OK' : 'SENSOR NG';
-                        statusEl.style.color = Number(data.ok) ? 'var(--success-green)' : 'var(--warning-amber)';
-                    }
+                if (data.l !== undefined) {
+                    document.getElementById('distLeftT4').textContent = Number(data.l);
                 }
+                if (data.f !== undefined) {
+                    document.getElementById('distFrontT4').textContent = Number(data.f);
+                }
+                if (data.r !== undefined) {
+                    document.getElementById('distRightT4').textContent = Number(data.r);
+                }
+
+                if (data.yaw !== undefined) document.getElementById('yawT4').textContent = `${Number(data.yaw).toFixed(1)}°`;
+                if (data.el !== undefined) document.getElementById('encL').textContent = `${Number(data.el)} xung`;
+                if (data.er !== undefined) document.getElementById('encR').textContent = `${Number(data.er)} xung`;
+                if (data.dp !== undefined) document.getElementById('encD').textContent = `${Number(data.dp)} xung`;
+
+            } else if (data.type === "turn") {
+                showTurnResult(Number(data.target), Number(data.turned), data.src);
+            } else if (data.type === "params") {
+                // đồng bộ thanh trượt với giá trị robot đang dùng thật
+                if (data.lc !== undefined) setSlider('LC', data.lc);
+                if (data.rc !== undefined) setSlider('RC', data.rc);
+                if (data.spd !== undefined) setSlider('SPD', data.spd);
+                if (data.dspd !== undefined) setSlider('DSPD', data.dspd);
+                if (data.cell !== undefined) setSlider('CELL', data.cell);
+            } else if (data.type === "maze_cfg") {
+                mazeCfg = { n: Number(data.n), gr: Number(data.gr), gc: Number(data.gc), gs: Number(data.gs) };
+                mazeCells = mazeCfg.n;
+                fillMazeCfgInputs(mazeCfg);
+                redrawMaze();
             } else if (data.type === "map") {
+                lastMapData = data;
                 const posEl = document.getElementById('robotPos');
-                const displayX = data.cx ? data.cx - 1 : 0;
-                const displayY = data.cy ? data.cy - 1 : 0;
+                const displayX = data.cx || 1;   // hàng, đánh số từ 1 như ô đích
+                const displayY = data.cy || 1;   // cột
                 if (posEl) posEl.textContent = `(${displayX}, ${displayY}) - ${data.dir}`;
                 drawMaze(data.cx, data.cy, data.dir, data.data);
             }
+        }
+
+        // ===== CHẾ ĐỘ 1: TEST QUAY GÓC =====
+        function testTurn(cmd, target) {
+            document.getElementById('resTarget').textContent = `${target}°`;
+            document.getElementById('resTurned').textContent = '--°';
+            document.getElementById('resError').textContent = '--°';
+            const st = document.getElementById('resStatus');
+            st.textContent = 'Đang quay...';
+            st.style.color = 'var(--primary-cyan)';
+            sendCmd(cmd);
+        }
+
+        function showTurnResult(target, turned, src) {
+            const err = turned - target;   // dương = quay lố, âm = quay thiếu
+            document.getElementById('resTarget').textContent = `${target.toFixed(0)}°`;
+            document.getElementById('resTurned').textContent = `${turned.toFixed(1)}°`;
+            document.getElementById('resError').textContent = `${err >= 0 ? '+' : ''}${err.toFixed(1)}°`;
+
+            const st = document.getElementById('resStatus');
+            if (src === 'T') {
+                st.textContent = 'HẾT GIỜ – gyro & encoder không đọc được góc (kiểm tra MPU6050/encoder)';
+                st.style.color = 'var(--danger-red)';
+                return;
+            }
+            const note = (src === 'E') ? ' (đo bằng encoder – gyro lỗi)' : '';
+            if (Math.abs(err) <= 2) {
+                st.textContent = 'CHUẨN ✔' + note;
+                st.style.color = 'var(--success-green)';
+            } else if (err > 0) {
+                st.textContent = 'QUAY LỐ → tăng bù (COMPENSATION)' + note;
+                st.style.color = 'var(--warning-amber)';
+            } else {
+                st.textContent = 'QUAY THIẾU → giảm bù (COMPENSATION)' + note;
+                st.style.color = 'var(--danger-red)';
+            }
+        }
+
+        function setSlider(type, val) {
+            const slider = document.getElementById(`slider${type}`);
+            if (!slider) return;
+            slider.value = val;
+            updateBadge(type, slider.value);
+        }
+
+        // số ô mỗi cạnh — tự lấy từ chuỗi map robot gửi (dài (2N+1)^2), không cần sửa khi đổi mê cung
+        let mazeCells = 5;
+        let lastMapData = null;
+        let mazeCfg = { n: 5, gr: 3, gc: 3, gs: 1 };   // cấu hình robot đang dùng (gói maze_cfg)
+        let mazeGeom = null;                              // kích thước ô/tường lần vẽ gần nhất, để bắt click
+
+        function redrawMaze() {
+            const d = lastMapData;
+            // map cũ khác kích thước => vẽ lưới trống theo cấu hình mới
+            const sameSize = d && d.data && d.data.length === (2 * mazeCells + 1) ** 2;
+            drawMaze(d ? d.cx : 1, d ? d.cy : 1, d ? d.dir : 'E', sameSize ? d.data : '');
+        }
+
+        function fillMazeCfgInputs(c) {
+            document.getElementById('cfgCells').value = c.n;
+            document.getElementById('cfgGoalRow').value = c.gr;
+            document.getElementById('cfgGoalCol').value = c.gc;
+            document.getElementById('cfgGoalSize').value = String(c.gs);
+        }
+
+        function resetMap() {
+            if (!confirm('Xoá toàn bộ bản đồ đã khám phá (kể cả trong flash)? Không thể hoàn tác.')) return;
+            lastMapData = null;
+            redrawMaze();
+            sendCmd('RESET');
+        }
+
+        // đổi ô nhập => đợi người dùng gõ xong một chút rồi mới gửi (không cần nút Gửi)
+        let mazeCfgTimer = null;
+        function queueMazeConfig() {
+            clearTimeout(mazeCfgTimer);
+            mazeCfgTimer = setTimeout(applyMazeConfig, 600);
+        }
+
+        function applyMazeConfig() {
+            const n = parseInt(document.getElementById('cfgCells').value, 10);
+            const gr = parseInt(document.getElementById('cfgGoalRow').value, 10);
+            const gc = parseInt(document.getElementById('cfgGoalCol').value, 10);
+            const gs = parseInt(document.getElementById('cfgGoalSize').value, 10);
+
+            // kiểm tra trước cho nhanh — robot vẫn kiểm tra lại và báo lỗi nếu sai
+            let err = '';
+            if (!(n >= 2 && n <= 16)) err = 'Kích thước phải từ 2 đến 16';
+            else if (!(gr >= 1 && gc >= 1 && gr + gs - 1 <= n && gc + gs - 1 <= n)) err = 'Đích nằm ngoài mê cung';
+            else if (gr === 1 && gc === 1) err = 'Đích không được trùng ô xuất phát (1,1)';
+            if (err) { log(err, 'error'); return; }
+
+            sendCmd(`SET_MAZE=${n},${gr},${gc},${gs}`);
+        }
+
+        // bấm vào 1 ô trên bản đồ => chọn làm ô đích và gửi luôn cho robot
+        function onMazeClick(ev) {
+            if (!mazeGeom) return;
+            const canvas = ev.currentTarget;
+            const rect = canvas.getBoundingClientRect();
+            const x = (ev.clientX - rect.left) * canvas.width / rect.width;
+            const y = (ev.clientY - rect.top) * canvas.height / rect.height;
+            const { N, C, T } = mazeGeom;
+            const c = Math.floor((x - T / 2) / (C + T));
+            const r = Math.floor((y - T / 2) / (C + T));
+            if (r < 0 || c < 0 || r >= N || c >= N) return;
+
+            const gs = parseInt(document.getElementById('cfgGoalSize').value, 10);
+            // vùng 2x2 không được tràn ra ngoài
+            document.getElementById('cfgGoalRow').value = Math.min(r + 1, N - gs + 1);
+            document.getElementById('cfgGoalCol').value = Math.min(c + 1, N - gs + 1);
+            document.getElementById('cfgCells').value = N;
+            redrawMaze();
+            queueMazeConfig();
         }
 
         function drawMaze(cx, cy, dir, mapStr) {
@@ -1077,39 +1400,69 @@
             const w = canvas.width;
             const h = canvas.height;
             ctx.clearRect(0, 0, w, h);
-            
+
             ctx.fillStyle = '#090d16';
             ctx.fillRect(0, 0, w, h);
 
-            const C = 48; // Kich thuoc o co (Cell)
-            const T = 8;  // Do day tuong (Wall thickness)
+            if (mapStr) {
+                const S = Math.round(Math.sqrt(mapStr.length));
+                if (S * S === mapStr.length && S % 2 === 1) mazeCells = (S - 1) / 2;
+            }
+            const N = mazeCells;
+            const S = 2 * N + 1;
+            const label = document.getElementById('mazeSizeLabel');
+            if (label) label.textContent = `${N}x${N}`;
+
+            const T = N <= 8 ? 8 : 4;                        // Do day tuong (Wall thickness)
+            const C = Math.floor((w - (N + 1) * T) / N);     // Kich thuoc o co (Cell)
+            mazeGeom = { N, C, T };
+
+            // ô thuộc vùng đích robot đang dùng / vùng đang chọn trên form (chưa gửi)
+            const inGoal = (r, c, g) => r >= g.gr - 1 && r < g.gr - 1 + g.gs && c >= g.gc - 1 && c < g.gc - 1 + g.gs;
+            const pick = {
+                gr: parseInt(document.getElementById('cfgGoalRow')?.value, 10),
+                gc: parseInt(document.getElementById('cfgGoalCol')?.value, 10),
+                gs: parseInt(document.getElementById('cfgGoalSize')?.value, 10),
+            };
+            const cfgMatches = mazeCfg.n === N;
+            const pickIsCurrent = cfgMatches && pick.gr === mazeCfg.gr && pick.gc === mazeCfg.gc && pick.gs === mazeCfg.gs;
 
             function getVal(mx, my) {
                 if (!mapStr) return 0;
-                const idx = mx * 17 + my;
+                const idx = mx * S + my;
                 return parseInt(mapStr[idx] || '0');
             }
 
-            // 1. Ve 8x8 O Co (Cells)
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
+            // 1. Ve N x N O Co (Cells)
+            for (let r = 0; r < N; r++) {
+                for (let c = 0; c < N; c++) {
                     const x = (c + 1) * T + c * C;
                     const y = (r + 1) * T + r * C;
                     ctx.fillStyle = '#101827';
+                    if (cfgMatches && inGoal(r, c, mazeCfg)) ctx.fillStyle = 'rgba(16, 185, 129, 0.35)';
                     ctx.fillRect(x, y, C, C);
+                    if (!pickIsCurrent && inGoal(r, c, pick)) {
+                        // đích đang chọn, chưa gửi => viền nét đứt
+                        ctx.save();
+                        ctx.strokeStyle = '#10b981';
+                        ctx.setLineDash([4, 3]);
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x + 2, y + 2, C - 4, C - 4);
+                        ctx.restore();
+                    }
 
-                    // Nhãn tọa độ (0,0 đến 7,7)
+                    // Nhãn tọa độ (đánh số từ 1, giống ô đích)
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-                    ctx.font = '10px monospace';
+                    ctx.font = `${N <= 8 ? 10 : 7}px monospace`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(`${r},${c}`, x + C / 2, y + C / 2);
+                    ctx.fillText(`${r + 1},${c + 1}`, x + C / 2, y + C / 2);
                 }
             }
 
-            // 2. Ve 9x9 Cot Goc (Posts)
-            for (let r = 0; r <= 8; r++) {
-                for (let c = 0; c <= 8; c++) {
+            // 2. Ve (N+1) x (N+1) Cot Goc (Posts)
+            for (let r = 0; r <= N; r++) {
+                for (let c = 0; c <= N; c++) {
                     const x = c * T + c * C;
                     const y = r * T + r * C;
                     ctx.fillStyle = '#6366f1';
@@ -1117,9 +1470,9 @@
                 }
             }
 
-            // 3. Ve Tuong Ngang (Horizontal Walls - 9 hang)
-            for (let r = 0; r <= 8; r++) {
-                for (let c = 0; c < 8; c++) {
+            // 3. Ve Tuong Ngang (Horizontal Walls - N+1 hang)
+            for (let r = 0; r <= N; r++) {
+                for (let c = 0; c < N; c++) {
                     const mx = r * 2;
                     const my = c * 2 + 1;
                     const val = getVal(mx, my);
@@ -1143,9 +1496,9 @@
                 }
             }
 
-            // 4. Ve Tuong Doc (Vertical Walls - 8 hang)
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c <= 8; c++) {
+            // 4. Ve Tuong Doc (Vertical Walls - N hang)
+            for (let r = 0; r < N; r++) {
+                for (let c = 0; c <= N; c++) {
                     const mx = r * 2 + 1;
                     const my = c * 2;
                     const val = getVal(mx, my);
@@ -1173,7 +1526,7 @@
             if (cx !== undefined && cy !== undefined) {
                 const r = cx - 1;
                 const c = cy - 1;
-                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                if (r >= 0 && r < N && c >= 0 && c < N) {
                     const rx = (c + 1) * T + c * C + C / 2;
                     const ry = (r + 1) * T + r * C + C / 2;
 
@@ -1201,14 +1554,25 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => { drawMaze(1, 1, 'E', ''); });
+        window.addEventListener('DOMContentLoaded', () => {
+            drawMaze(1, 1, 'E', '');
+            document.getElementById('mazeCanvas').addEventListener('click', onMazeClick);
+            // sửa số trên form => vẽ lại để xem trước vùng đích
+            ['cfgCells', 'cfgGoalRow', 'cfgGoalCol', 'cfgGoalSize'].forEach(id =>
+                document.getElementById(id).addEventListener('input', () => {
+                    const n = parseInt(document.getElementById('cfgCells').value, 10);
+                    if (n >= 2 && n <= 16 && !(lastMapData && lastMapData.data)) mazeCells = n;
+                    redrawMaze();
+                }));
+        });
 
         function updateBadge(type, val) {
             const badge = document.getElementById(`valBadge${type}`);
             const slider = document.getElementById(`slider${type}`);
             if (!badge || !slider) return;
 
-            if (type === 'SPD') badge.textContent = val;
+            if (type === 'SPD' || type === 'DSPD') badge.textContent = val;
+            else if (type === 'CELL') badge.textContent = `${parseInt(val, 10)} xung`;
             else if (type === 'KP' || type === 'KD') badge.textContent = parseFloat(val).toFixed(2);
             else if (type === 'KI') badge.textContent = parseFloat(val).toFixed(3);
             else badge.textContent = parseFloat(val).toFixed(1) + '°';

@@ -10,13 +10,25 @@ struct WallDist {
 class VL53Sensors {
 public:
   bool begin();                 // set địa chỉ I2C riêng cho từng cảm biến qua XSHUT
-  WallDist read();               // đọc cả 3, đơn vị mm
+  WallDist read();               // KHÔNG chặn: lấy mẫu mới nếu có, còn lại trả giá trị cache (mm)
+  WallDist readFresh(uint32_t timeoutMs = 120);  // bỏ mẫu cũ, chờ cả 3 cảm biến đo mẫu MỚI
   bool frontWall(int thresholdMm = -1);
   bool leftWall(int thresholdMm = -1);
   bool rightWall(int thresholdMm = -1);
 
 private:
+  struct Chan {
+    VL53L0X* dev;
+    bool inited = false;
+    int mm = 8190;
+    uint32_t stampMs = 0;      // thời điểm nhận mẫu gần nhất
+  };
+  bool poll(Chan& c);          // true nếu vừa lấy được mẫu mới
+  bool fresh(const Chan& c) const;
+  WallDist snapshot() const;
+
   VL53L0X _front, _left, _right;
+  Chan _cf{&_front}, _cl{&_left}, _cr{&_right};
   bool _ok = false;
 };
 

@@ -10,26 +10,51 @@ static void IRAM_ATTR isrRightTrampoline() { if (Encoder::instance) Encoder::ins
 void Encoder::begin() {
   instance = this;
 
-  pinMode(ENC_LEFT_A, INPUT);
-  pinMode(ENC_LEFT_B, INPUT);
-  pinMode(ENC_RIGHT_A, INPUT);
-  pinMode(ENC_RIGHT_B, INPUT);
+  // pull-up: encoder Hall/quang thường ra open-collector, để INPUT thả nổi sẽ không đếm được
+  pinMode(ENC_LEFT_A, INPUT_PULLUP);
+  pinMode(ENC_LEFT_B, INPUT_PULLUP);
+  pinMode(ENC_RIGHT_A, INPUT_PULLUP);
+  pinMode(ENC_RIGHT_B, INPUT_PULLUP);
 
+#if ENC_SINGLE_CHANNEL
+  attachInterrupt(digitalPinToInterrupt(ENC_LEFT_A), isrLeftTrampoline, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENC_RIGHT_A), isrRightTrampoline, RISING);
+#else
   attachInterrupt(digitalPinToInterrupt(ENC_LEFT_A), isrLeftTrampoline, CHANGE);
   attachInterrupt(digitalPinToInterrupt(ENC_RIGHT_A), isrRightTrampoline, CHANGE);
+#endif
 }
 
-void IRAM_ATTR Encoder::isrLeft() {
-  int a = digitalRead(ENC_LEFT_A);
-  int b = digitalRead(ENC_LEFT_B);
-  if (a != b) _left--; else _left++;
-}
+#if ENC_SINGLE_CHANNEL
+  // 1 kênh: mỗi cạnh lên = 1 xung, không biết chiều (quãng đường / góc quay đều lấy trị tuyệt đối)
+  static volatile uint32_t lastLeftUs = 0, lastRightUs = 0;
 
-void IRAM_ATTR Encoder::isrRight() {
-  int a = digitalRead(ENC_RIGHT_A);
-  int b = digitalRead(ENC_RIGHT_B);
-  if (a != b) _right++; else _right--;
-}
+  void IRAM_ATTR Encoder::isrLeft() {
+    uint32_t now = micros();
+    if (now - lastLeftUs < ENC_DEBOUNCE_US) return;
+    lastLeftUs = now;
+    _left++;
+  }
+
+  void IRAM_ATTR Encoder::isrRight() {
+    uint32_t now = micros();
+    if (now - lastRightUs < ENC_DEBOUNCE_US) return;
+    lastRightUs = now;
+    _right++;
+  }
+#else
+  void IRAM_ATTR Encoder::isrLeft() {
+    int a = digitalRead(ENC_LEFT_A);
+    int b = digitalRead(ENC_LEFT_B);
+    if (a != b) _left--; else _left++;
+  }
+
+  void IRAM_ATTR Encoder::isrRight() {
+    int a = digitalRead(ENC_RIGHT_A);
+    int b = digitalRead(ENC_RIGHT_B);
+    if (a != b) _right++; else _right--;
+  }
+#endif
 
 void Encoder::reset() {
   noInterrupts();
@@ -38,8 +63,8 @@ void Encoder::reset() {
   interrupts();
 }
 
-long Encoder::left() const  { return ENC_LEFT_INVERT  ? -_left  : _left; }
-long Encoder::right() const { return ENC_RIGHT_INVERT ? -_right : _right; }
+long Encoder::left() const  { return _left; }
+long Encoder::right() const { return _right; }
 
 int Encoder::spinCount() const {
   noInterrupts();
