@@ -13,9 +13,12 @@ public:
     void processBLECommands();
     void sendTelemetry();
     void printStatus();
+    void sendParams();
+    void sendMazeConfig();
 
 private:
     unsigned long _lastTelemetryTime;
+    bool _wasConnected = false;
 };
 
 extern CommandHandler commandHandler;

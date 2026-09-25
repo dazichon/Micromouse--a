@@ -80,9 +80,20 @@ void BLEManager::onWrite(BLECharacteristic *pCharacteristic) {
 }
 
 void BLEManager::print(const String &msg) {
-    if (_deviceConnected && _pTxCharacteristic != nullptr) {
-        _pTxCharacteristic->setValue((uint8_t*)msg.c_str(), msg.length());
+    if (!_deviceConnected || _pTxCharacteristic == nullptr) return;
+
+    // Mỗi lần notify chỉ gửi được tối đa (MTU - 3) byte, phần dư bị cắt mất.
+    // Gói map ~340 byte nên phải chia nhỏ; dashboard ghép lại theo ký tự '\n'.
+    uint16_t mtu = _pServer->getPeerMTU(_pServer->getConnId());
+    size_t chunk = (mtu > 23) ? (size_t)(mtu - 3) : 20;
+
+    const uint8_t* data = (const uint8_t*)msg.c_str();
+    size_t len = msg.length();
+    for (size_t off = 0; off < len; off += chunk) {
+        size_t n = min(chunk, len - off);
+        _pTxCharacteristic->setValue((uint8_t*)(data + off), n);
         _pTxCharacteristic->notify();
+        if (off + n < len) delay(5);   // tránh tràn hàng đợi notify của stack BLE
     }
 }
 

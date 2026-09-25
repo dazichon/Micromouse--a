@@ -1,18 +1,35 @@
-#pragma once
+#ifndef PID_CONTROLLER_H
+#define PID_CONTROLLER_H
+
+#include <Arduino.h>
 
 class PIDController {
 public:
-  PIDController(float kp = 0, float ki = 0, float kd = 0, float outMin = -255, float outMax = 255);
+    PIDController(float kp = 0.0f, float ki = 0.0f, float kd = 0.0f, float minOut = -255.0f, float maxOut = 255.0f);
 
-  void setGains(float kp, float ki, float kd);
-  void setOutputLimits(float outMin, float outMax);
-  void reset();
+    void setGains(float kp, float ki, float kd);
+    void setOutputLimits(float minOut, float maxOut);
+    void reset();
 
-  float compute(float error, float dt);   // dt tính bằng giây
+    float compute(float setpoint, float input, float dt);
+    float computeError(float error, float dt);
+
+    float getKp() const { return _kp; }
+    float getKi() const { return _ki; }
+    float getKd() const { return _kd; }
+    float getPrevError() const { return _prevError; }
+    float getIntegral() const { return _integral; }
 
 private:
-  float _kp, _ki, _kd;
-  float _outMin, _outMax;
-  float _integral = 0;
-  float _prevError = 0;
+    float _kp;
+    float _ki;
+    float _kd;
+
+    float _integral;
+    float _prevError;
+
+    float _minOutput;
+    float _maxOutput;
 };
+
+#endif

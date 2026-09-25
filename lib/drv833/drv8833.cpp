@@ -50,8 +50,9 @@ void DRV8833::stop() {
 }
 
 void DRV8833::brake() {
-  digitalWrite(MOTOR_LEFT_IN1, HIGH);
-  digitalWrite(MOTOR_LEFT_IN2, HIGH);
-  digitalWrite(MOTOR_RIGHT_IN1, HIGH);
-  digitalWrite(MOTOR_RIGHT_IN2, HIGH);
+  // các chân đang gắn PWM (LEDC) => dùng analogWrite 255 thay cho digitalWrite
+  analogWrite(MOTOR_LEFT_IN1, 255);
+  analogWrite(MOTOR_LEFT_IN2, 255);
+  analogWrite(MOTOR_RIGHT_IN1, 255);
+  analogWrite(MOTOR_RIGHT_IN2, 255);
 }

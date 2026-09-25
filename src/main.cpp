@@ -14,6 +14,9 @@ void setup() {
     // 2. Khởi tạo động cơ, cảm biến VL53L0X và Gyro MPU6050
     robotNav.init();
 
+    // Khi robot đang chạy/quay (vòng lặp blocking), vẫn gửi telemetry + vị trí qua BLE
+    robotNav.setIdleHook([]() { commandHandler.sendTelemetry(); });
+
     Serial.println("==========================================");
     Serial.println(">> ROBOT MICROMOUSE READY!");
     Serial.println("==========================================");
