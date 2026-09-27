@@ -806,11 +806,11 @@
                         <div class="param-group">
                             <div class="param-header">
                                 <div class="param-title">LEFT_COMPENSATION (Bù Rẽ Trái):</div>
-                                <div class="param-value-badge" id="valBadgeLC">2.0°</div>
+                                <div class="param-value-badge" id="valBadgeLC" data-param="LC">2.0°</div>
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('lc', -0.5)">-</button>
-                                <input type="range" class="slider-input" id="sliderLC" min="0" max="35" step="0.5" value="2.0" aria-label="LEFT_COMPENSATION" oninput="updateBadge('LC', this.value)" onchange="applyParam('LC')">
+                                <input type="range" class="slider-input" id="sliderLC" data-param="LC" min="0" max="35" step="0.5" value="2.0" aria-label="LEFT_COMPENSATION" oninput="updateBadge('LC', this.value)" onchange="applyParam('LC')">
                                 <button class="btn-step" onclick="stepParam('lc', 0.5)">+</button>
                             </div>
                         </div>
@@ -819,11 +819,11 @@
                         <div class="param-group">
                             <div class="param-header">
                                 <div class="param-title">RIGHT_COMPENSATION (Bù Rẽ Phải):</div>
-                                <div class="param-value-badge" id="valBadgeRC">2.0°</div>
+                                <div class="param-value-badge" id="valBadgeRC" data-param="RC">2.0°</div>
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('rc', -0.5)">-</button>
-                                <input type="range" class="slider-input" id="sliderRC" min="0" max="35" step="0.5" value="2.0" aria-label="RIGHT_COMPENSATION" oninput="updateBadge('RC', this.value)" onchange="applyParam('RC')">
+                                <input type="range" class="slider-input" id="sliderRC" data-param="RC" min="0" max="35" step="0.5" value="2.0" aria-label="RIGHT_COMPENSATION" oninput="updateBadge('RC', this.value)" onchange="applyParam('RC')">
                                 <button class="btn-step" onclick="stepParam('rc', 0.5)">+</button>
                             </div>
                         </div>
@@ -832,12 +832,31 @@
                         <div class="param-group">
                             <div class="param-header">
                                 <div class="param-title">TURN_SPEED (Tốc độ PWM 0-255):</div>
-                                <div class="param-value-badge" id="valBadgeSPD">130</div>
+                                <div class="param-value-badge" id="valBadgeSPD" data-param="SPD">130</div>
                             </div>
                             <div class="slider-controls">
                                 <button class="btn-step" onclick="stepParam('spd', -5)">-</button>
-                                <input type="range" class="slider-input" id="sliderSPD" min="70" max="255" step="5" value="130" aria-label="TURN_SPEED" oninput="updateBadge('SPD', this.value)" onchange="applyParam('SPD')">
+                                <input type="range" class="slider-input" id="sliderSPD" data-param="SPD" min="70" max="255" step="5" value="130" aria-label="TURN_SPEED" oninput="updateBadge('SPD', this.value)" onchange="applyParam('SPD')">
                                 <button class="btn-step" onclick="stepParam('spd', 5)">+</button>
+                            </div>
+                        </div>
+
+                        <!-- PARAM 4: YAW SCALE — bù gyro báo ít/nhiều hơn góc quay THẬT -->
+                        <div class="param-group">
+                            <div class="param-header">
+                                <div class="param-title">YAW SCALE (bù gyro sai lệch so với góc quay thật):</div>
+                                <div class="param-value-badge" id="valBadgeYAWSCALE" data-param="YAWSCALE">1.00</div>
+                            </div>
+                            <div class="slider-controls">
+                                <button class="btn-step" onclick="stepParam('yawscale', -0.01)">-</button>
+                                <input type="range" class="slider-input" id="sliderYAWSCALE" data-param="YAWSCALE" min="0.50" max="2.00" step="0.01" value="1.00" aria-label="YAW_SCALE" oninput="updateBadge('YAWSCALE', this.value)" onchange="applyParam('YAWSCALE')">
+                                <button class="btn-step" onclick="stepParam('yawscale', 0.01)">+</button>
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.75; margin-top: 4px;">
+                                Quay xe thật nhiều vòng (vd. QUAY 180° vài lần liên tiếp), đo góc THẬT bằng
+                                thước đo góc / đánh dấu trên sàn, so với "Góc Đã Quay Thực Tế" ở khung bên trái
+                                (đó là số GYRO báo, không phải góc thật). Gyro báo ÍT hơn thật → tăng Yaw Scale;
+                                báo NHIỀU hơn → giảm. Chỉnh cho tới khi 2 số khớp nhau.
                             </div>
                         </div>
 
@@ -875,11 +894,11 @@
                 <div class="param-group">
                     <div class="param-header">
                         <div class="param-title">Kp (Hệ Số Tỉ Lệ - Proportional):</div>
-                        <div class="param-value-badge" id="valBadgeKP">0.25</div>
+                        <div class="param-value-badge" id="valBadgeKP" data-param="KP">0.25</div>
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('kp', -0.1)">-</button>
-                        <input type="range" class="slider-input" id="sliderKP" min="0.0" max="5.0" step="0.05" value="0.25" aria-label="Kp" oninput="updateBadge('KP', this.value)" onchange="applyParam('KP')">
+                        <input type="range" class="slider-input" id="sliderKP" data-param="KP" min="0.0" max="5.0" step="0.05" value="0.25" aria-label="Kp" oninput="updateBadge('KP', this.value)" onchange="applyParam('KP')">
                         <button class="btn-step" onclick="stepParam('kp', 0.1)">+</button>
                     </div>
                 </div>
@@ -888,11 +907,11 @@
                 <div class="param-group">
                     <div class="param-header">
                         <div class="param-title">Ki (Hệ Số Tích Phân - Integral):</div>
-                        <div class="param-value-badge" id="valBadgeKI">0.000</div>
+                        <div class="param-value-badge" id="valBadgeKI" data-param="KI">0.000</div>
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('ki', -0.001)">-</button>
-                        <input type="range" class="slider-input" id="sliderKI" min="0.000" max="0.050" step="0.001" value="0" aria-label="Ki" oninput="updateBadge('KI', this.value)" onchange="applyParam('KI')">
+                        <input type="range" class="slider-input" id="sliderKI" data-param="KI" min="0.000" max="0.050" step="0.001" value="0" aria-label="Ki" oninput="updateBadge('KI', this.value)" onchange="applyParam('KI')">
                         <button class="btn-step" onclick="stepParam('ki', 0.001)">+</button>
                     </div>
                 </div>
@@ -901,30 +920,72 @@
                 <div class="param-group">
                     <div class="param-header">
                         <div class="param-title">Kd (Hệ Số Vi Phân - Derivative):</div>
-                        <div class="param-value-badge" id="valBadgeKD">0.80</div>
+                        <div class="param-value-badge" id="valBadgeKD" data-param="KD">0.80</div>
                     </div>
                     <div class="slider-controls">
                         <button class="btn-step" onclick="stepParam('kd', -0.05)">-</button>
-                        <input type="range" class="slider-input" id="sliderKD" min="0.00" max="2.00" step="0.05" value="0.80" aria-label="Kd" oninput="updateBadge('KD', this.value)" onchange="applyParam('KD')">
+                        <input type="range" class="slider-input" id="sliderKD" data-param="KD" min="0.00" max="2.00" step="0.05" value="0.80" aria-label="Kd" oninput="updateBadge('KD', this.value)" onchange="applyParam('KD')">
                         <button class="btn-step" onclick="stepParam('kd', 0.05)">+</button>
                     </div>
                 </div>
 
+                <!-- TỐC ĐỘ CHẠY THẲNG — dùng chung tham số DSPD với tab Bản Đồ -->
+                <div class="param-group">
+                    <div class="param-header">
+                        <div class="param-title">TỐC ĐỘ CHẠY THẲNG (PWM 0-160):</div>
+                        <div class="param-value-badge" id="valBadgeDSPD_pid" data-param="DSPD">60</div>
+                    </div>
+                    <div class="slider-controls">
+                        <button class="btn-step" onclick="stepParam('dspd', -10)">-</button>
+                        <input type="range" class="slider-input" id="sliderDSPD_pid" data-param="DSPD" min="0" max="160" step="5" value="60" aria-label="DRIVE_SPEED" oninput="updateBadge('DSPD', this.value)" onchange="applyParam('DSPD')">
+                        <button class="btn-step" onclick="stepParam('dspd', 10)">+</button>
+                    </div>
+                </div>
+
+                <!-- ĐỘ DÀI 1 Ô — dùng cho nút "ĐI TỪNG Ô" bên dưới, dùng chung tham số CELL với tab Bản Đồ -->
+                <div class="param-group">
+                    <div class="param-header">
+                        <div class="param-title">ĐỘ DÀI 1 Ô (30–300 xung encoder):</div>
+                        <div class="param-value-badge" id="valBadgeCELL_pid" data-param="CELL">100 xung</div>
+                    </div>
+                    <div class="slider-controls">
+                        <button class="btn-step" onclick="stepParam('cell', -5)">-</button>
+                        <input type="range" class="slider-input" id="sliderCELL_pid" data-param="CELL" min="30" max="300" step="5" value="100" aria-label="CELL_LEN" oninput="updateBadge('CELL', this.value)" onchange="applyParam('CELL')">
+                        <button class="btn-step" onclick="stepParam('cell', 5)">+</button>
+                    </div>
+                </div>
+
                 <div style="display: flex; gap: 16px; margin-top: 24px;">
-                    <button class="btn-pid-run" style="flex: 1;" onclick="sendCmd('START')">
-                        ▶ BẮT ĐẦU EXPLORE
+                    <button class="btn-pid-run" style="flex: 1;" onclick="sendCmd('PIDTEST')">
+                        🚗 CHẠY THỬ PID (TỰ DO)
                     </button>
-                    <button class="btn-brake" style="flex: 1;" onclick="sendCmd('FAST')">
-                        ⚡ CHẠY FAST RUN
+                    <button class="btn-turn-right" style="flex: 1;" onclick="sendCmd('PIDCELL')">
+                        🧩 CHẾ ĐỘ ĐI PID TỪNG Ô
                     </button>
                 </div>
-                <div style="display: flex; gap: 16px; margin-top: 12px;">
-                    <button class="btn-turn-left" style="flex: 1;" onclick="sendCmd('STATUS')">
-                        📊 STATUS
-                    </button>
-                    <button class="btn-brake" style="flex: 1;" onclick="sendCmd('STOP')">
-                        ⏹ STOP
-                    </button>
+                <div style="font-size: 13px; opacity: 0.75; margin-top: 8px;">
+                    <b>TỰ DO:</b> xe chạy thẳng liên tục theo PID bám tường/vật cản, không dừng theo ô.
+                    <b>TỪNG Ô:</b> xe đi đúng "ĐỘ DÀI 1 Ô" ở trên rồi dừng ngắn, lặp lại — tiện để xem PID
+                    hội tụ trong 1 đoạn ngắn. Cả 2 chế độ đều KHÔNG đụng tới bản đồ/vị trí ô. Chỉnh Kp/Ki/Kd
+                    ngay trong lúc xe đang chạy để xem phản ứng. Gửi STOP (tab 1 hoặc tab 3) để dừng.
+                </div>
+
+                <div class="maze-with-sensors" style="margin-top: 16px;">
+                    <div class="sensor-panel">
+                        <div class="sensor-panel-title">📡 CẢM BIẾN</div>
+                        <div class="robot-visual-sm">
+                            <div class="sensor-tag sensor-top">TRƯỚC: <span id="distFrontT2">--</span> mm</div>
+                            <div class="sensor-tag sensor-left-tag">TRÁI: <span id="distLeftT2">--</span> mm</div>
+                            <div class="sensor-tag sensor-right-tag">PHẢI: <span id="distRightT2">--</span> mm</div>
+                            <div style="text-align: center; color: var(--text-muted); font-size: 20px;">🤖</div>
+                        </div>
+                        <div class="sensor-stats">
+                            <div><span>Góc xoay</span><b id="yawT2">--°</b></div>
+                            <div><span>Encoder trái</span><b id="encLT2">--</b></div>
+                            <div><span>Encoder phải</span><b id="encRT2">--</b></div>
+                            <div><span>Đã đi</span><b id="encDT2">--</b></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -944,11 +1005,11 @@
                     <div class="param-group" style="flex: 1 1 280px; margin-bottom: 0;">
                         <div class="param-header">
                             <div class="param-title">TỐC ĐỘ CHẠY THẲNG (PWM 0-160):</div>
-                            <div class="param-value-badge" id="valBadgeDSPD">60</div>
+                            <div class="param-value-badge" id="valBadgeDSPD" data-param="DSPD">60</div>
                         </div>
                         <div class="slider-controls">
                             <button class="btn-step" onclick="stepParam('dspd', -10)">-</button>
-                            <input type="range" class="slider-input" id="sliderDSPD" min="0" max="160" step="5" value="60" aria-label="DRIVE_SPEED" oninput="updateBadge('DSPD', this.value)" onchange="applyParam('DSPD')">
+                            <input type="range" class="slider-input" id="sliderDSPD" data-param="DSPD" min="0" max="160" step="5" value="60" aria-label="DRIVE_SPEED" oninput="updateBadge('DSPD', this.value)" onchange="applyParam('DSPD')">
                             <button class="btn-step" onclick="stepParam('dspd', 10)">+</button>
                         </div>
                     </div>
@@ -966,11 +1027,11 @@
                     <div class="param-group" style="flex: 1 1 280px; margin-bottom: 0;">
                         <div class="param-header">
                             <div class="param-title">ĐỘ DÀI 1 Ô (30–300 xung encoder):</div>
-                            <div class="param-value-badge" id="valBadgeCELL">100 xung</div>
+                            <div class="param-value-badge" id="valBadgeCELL" data-param="CELL">100 xung</div>
                         </div>
                         <div class="slider-controls">
                             <button class="btn-step" onclick="stepParam('cell', -5)">-</button>
-                            <input type="range" class="slider-input" id="sliderCELL" min="30" max="300" step="5" value="100" aria-label="CELL_LEN" oninput="updateBadge('CELL', this.value)" onchange="applyParam('CELL')">
+                            <input type="range" class="slider-input" id="sliderCELL" data-param="CELL" min="30" max="300" step="5" value="100" aria-label="CELL_LEN" oninput="updateBadge('CELL', this.value)" onchange="applyParam('CELL')">
                             <button class="btn-step" onclick="stepParam('cell', 5)">+</button>
                         </div>
                     </div>
@@ -1255,6 +1316,15 @@
                 if (data.er !== undefined) document.getElementById('encR').textContent = `${Number(data.er)} xung`;
                 if (data.dp !== undefined) document.getElementById('encD').textContent = `${Number(data.dp)} xung`;
 
+                // panel cảm biến thu nhỏ ở tab PID (Chế độ 2) — cùng dữ liệu telemetry
+                if (data.l !== undefined) document.getElementById('distLeftT2').textContent = Number(data.l);
+                if (data.f !== undefined) document.getElementById('distFrontT2').textContent = Number(data.f);
+                if (data.r !== undefined) document.getElementById('distRightT2').textContent = Number(data.r);
+                if (data.yaw !== undefined) document.getElementById('yawT2').textContent = `${Number(data.yaw).toFixed(1)}°`;
+                if (data.el !== undefined) document.getElementById('encLT2').textContent = `${Number(data.el)} xung`;
+                if (data.er !== undefined) document.getElementById('encRT2').textContent = `${Number(data.er)} xung`;
+                if (data.dp !== undefined) document.getElementById('encDT2').textContent = `${Number(data.dp)} xung`;
+
             } else if (data.type === "turn") {
                 showTurnResult(Number(data.target), Number(data.turned), data.src);
             } else if (data.type === "params") {
@@ -1264,6 +1334,7 @@
                 if (data.spd !== undefined) setSlider('SPD', data.spd);
                 if (data.dspd !== undefined) setSlider('DSPD', data.dspd);
                 if (data.cell !== undefined) setSlider('CELL', data.cell);
+                if (data.yawscale !== undefined) setSlider('YAWSCALE', data.yawscale);
             } else if (data.type === "maze_cfg") {
                 mazeCfg = { n: Number(data.n), gr: Number(data.gr), gc: Number(data.gc), gs: Number(data.gs) };
                 mazeCells = mazeCfg.n;
@@ -1315,11 +1386,15 @@
             }
         }
 
+        // Mỗi tham số (DSPD, CELL, KP...) có thể có NHIỀU thanh trượt/badge trên nhiều tab (vd. DSPD
+        // xuất hiện ở cả tab Bản Đồ và tab PID) — chọn theo data-param để tất cả cùng đồng bộ 1 giá trị.
+        function paramSliders(type) { return document.querySelectorAll(`.slider-input[data-param="${type}"]`); }
+        function paramBadges(type)  { return document.querySelectorAll(`.param-value-badge[data-param="${type}"]`); }
+
         function setSlider(type, val) {
-            const slider = document.getElementById(`slider${type}`);
-            if (!slider) return;
-            slider.value = val;
-            updateBadge(type, slider.value);
+            const sliders = paramSliders(type);
+            if (!sliders.length) return;
+            updateBadge(type, val);
         }
 
         // số ô mỗi cạnh — tự lấy từ chuỗi map robot gửi (dài (2N+1)^2), không cần sửa khi đổi mê cung
@@ -1567,36 +1642,37 @@
         });
 
         function updateBadge(type, val) {
-            const badge = document.getElementById(`valBadge${type}`);
-            const slider = document.getElementById(`slider${type}`);
-            if (!badge || !slider) return;
+            const sliders = paramSliders(type);
+            const badges = paramBadges(type);
+            if (!sliders.length) return;
 
-            if (type === 'SPD' || type === 'DSPD') badge.textContent = val;
-            else if (type === 'CELL') badge.textContent = `${parseInt(val, 10)} xung`;
-            else if (type === 'KP' || type === 'KD') badge.textContent = parseFloat(val).toFixed(2);
-            else if (type === 'KI') badge.textContent = parseFloat(val).toFixed(3);
-            else badge.textContent = parseFloat(val).toFixed(1) + '°';
+            let text;
+            if (type === 'SPD' || type === 'DSPD') text = val;
+            else if (type === 'CELL') text = `${parseInt(val, 10)} xung`;
+            else if (type === 'KP' || type === 'KD' || type === 'YAWSCALE') text = parseFloat(val).toFixed(2);
+            else if (type === 'KI') text = parseFloat(val).toFixed(3);
+            else text = parseFloat(val).toFixed(1) + '°';
 
-            slider.value = val;
+            badges.forEach(b => b.textContent = text);
+            sliders.forEach(s => s.value = val);
         }
 
         function stepParam(param, delta) {
             const type = param.toUpperCase();
-            const slider = document.getElementById(`slider${type}`);
-            if (!slider) return;
-            let val = parseFloat(slider.value) + delta;
-            if (val < parseFloat(slider.min)) val = parseFloat(slider.min);
-            if (val > parseFloat(slider.max)) val = parseFloat(slider.max);
-            slider.value = val;
+            const sliders = paramSliders(type);
+            if (!sliders.length) return;
+            const ref = sliders[0];
+            let val = parseFloat(ref.value) + delta;
+            if (val < parseFloat(ref.min)) val = parseFloat(ref.min);
+            if (val > parseFloat(ref.max)) val = parseFloat(ref.max);
             updateBadge(type, val);
             applyParam(type);
         }
 
         function applyParam(type) {
-            const slider = document.getElementById(`slider${type}`);
-            if (!slider) return;
-            const val = slider.value;
-            sendCmd(`SET_${type}=${val}`);
+            const sliders = paramSliders(type);
+            if (!sliders.length) return;
+            sendCmd(`SET_${type}=${sliders[0].value}`);
         }
     </script>
 </body>

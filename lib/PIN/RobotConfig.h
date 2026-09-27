@@ -70,19 +70,72 @@
 #define WHEEL_RADIUS_CM 3.2f
 #define WHEEL_BASE_CM 8.0f      // khoảng cách tâm 2 bánh — ĐO LẠI trên robot (dùng khi quay bằng encoder)
 #define ENC_PULSES_PER_REV 20.0f
-#define WALL_THRESHOLD_MM 230   // < 230mm là có tường, > 230mm là cửa trống (đo thực tế, lấy từ project mm)
+// Tốc độ đo VL53L0X: thời gian cho 1 lần đo (us) — càng lớn thì cảm biến gom trung bình nội bộ
+// nhiều hơn => ít nhiễu/ít giá trị rác hơn (đặc biệt lúc đứng im hoặc dừng giữa các ô ở Chế độ 2),
+// nhưng đo chậm hơn => vòng lặp PID (DRIVE_LOOP_MS, tính từ giá trị này) cũng chậm theo.
+// Nhỏ quá thư viện từ chối => robot tự quay về 20000 và báo trên Serial.
+//   33000 = ~30Hz (mặc định thư viện, ổn định nhất), 20000 = 50Hz, 15000 = ~66Hz, 10000 = 100Hz
+#define VL53_TIMING_BUDGET_US 33000
+// Lọc nhiễu VL53L0X: raw -> median-3 (loại nhiễu xung/spike) -> EMA (làm mượt).
+// Alpha càng lớn -> bám sát mẫu mới càng nhanh nhưng càng ít mượt (0 < alpha <= 1).
+#define TOF_EMA_ALPHA 0.35f
+// Mẫu raw >= ngưỡng này coi là "ngoài tầm/không thấy vật" (KHÔNG lọc median/EMA cùng mẫu gần —
+// xem VL53Sensors::poll()). Chọn lớn hơn mọi bề rộng hành lang mê cung thực tế.
+#define TOF_VALID_RANGE_MAX_MM 1200
+// Cần bấy nhiêu mẫu GẦN/XA liên tiếp mới đổi trạng thái — chống cảm biến chớp nháy giữa 1 mẫu đo
+// đúng và 1 mẫu "ngoài tầm" (từng thấy trên VL53L0X khi vật ở mép tầm đo / nhiễu I2C).
+// CỐ Ý LỆCH: tin mẫu GẦN ngay (1 mẫu, có tường/vật là phải biết ngay kẻo đâm), chỉ chốt XA sau
+// vài mẫu liên tiếp — nếu không, XA và GẦN chớp nháy đúng 1-1 (trường hợp lỗi cảm biến thực tế)
+// sẽ không bao giờ chốt được trạng thái nào (cả 2 phía đều bị mẫu đối lập xen kẽ làm mất streak).
+#define TOF_FAR_CONFIRM_SAMPLES  4
+#define TOF_NEAR_CONFIRM_SAMPLES 1
+// Chu kỳ vòng PID khi chạy thẳng (ms) — bằng thời gian đo VL53 để mỗi vòng có mẫu mới
+#define DRIVE_LOOP_MS ((VL53_TIMING_BUDGET_US + 999) / 1000)
+#define WALL_THRESHOLD_MM 230  // < 230mm là có tường, > 230mm là cửa trống (đo thực tế, lấy từ project mm)
 // Khoảng cách đo được tại TÂM Ô khi có tường 2 bên (lấy từ project mm) — PID bám tường giữ robot ở đây
 #define WALL_TARGET_LEFT_MM   170.0f
 #define WALL_TARGET_RIGHT_MM  149.0f
 #define WALL_CENTER_OFFSET_MM (WALL_TARGET_LEFT_MM - WALL_TARGET_RIGHT_MM)
-#define WALL_ERR_DEADBAND_MM  5.0f    // lệch dưới 5mm coi như đang đi thẳng
-#define FRONT_STOP_MM 60      // tường trước gần hơn mức này => dừng ngay dù encoder chưa đủ quãng
+// Dùng làm ngưỡng "đã thẳng giữa ô" trong alignInCell() (Chế độ 2 - đi từng ô) — KHÔNG dùng để
+// triệt sai số nhỏ trong PID bám tường (wallFollowCorrection() để y hệt project mm, không deadband).
+#define WALL_ERR_DEADBAND_MM  5.0f
+// ================= PID BÁM TƯỜNG — theo đúng project mm =================
+// EMA làm mượt khoảng cách 2 bên trước khi tính sai số: còn trong tầm thì bám nhanh (alpha lớn);
+// mất tường/lóa thì trôi CHẬM về giá trị "coi như trống" (999) để không bị giật khi mất/được tường.
+#define WALL_SMOOTH_ALPHA_NEAR 0.4f
+#define WALL_SMOOTH_ALPHA_FAR  0.15f
+#define WALL_SMOOTH_FAR_MM     999.0f
+// Trộn thêm sai số đồng bộ 2 bánh (chênh lệch xung encoder GIỮA 2 LẦN GỌI GẦN NHẤT — không phải
+// cộng dồn từ đầu — đi thẳng đều thì lệch này ≈0) vào sai số bám tường trước khi đưa vào PID —
+// bù trôi do 1 bánh/motor yếu hơn mà cảm biến tường (đo mm, cập nhật chậm hơn encoder) chưa kịp
+// phát hiện. final_error = W1*wall_error(mm) + W2*(deltaEncL - deltaEncR).
+#define WALL_ENC_BLEND_W1 0.7f    // trọng số sai số bám tường (mm)
+#define WALL_ENC_BLEND_W2 0.35f   // trọng số sai số đồng bộ encoder (xung/vòng lặp)
+// Không có tường 2 bên (ngã tư/ô trống): giữ thẳng bằng gyro + encoder thay vì chỉ 1 nguồn.
+#define NOWALL_GYRO_WEIGHT 0.6f
+#define NOWALL_ENC_WEIGHT  0.4f
+// Lọc thông thấp lần 2 trên sai số ĐÃ TRỘN (chống giật do khe nứt tường / gai nhọn tức thời),
+// rồi kẹp trần trước khi đưa vào PID — PID Kp/Ki/Kd chỉnh ở tab Chế độ 2 áp dụng SAU 2 bước này.
+#define WALL_ERR_LOWPASS_ALPHA 0.3f
+#define WALL_ERR_MAX_MM        20.0f
+#define FRONT_STOP_MM 100     // tường trước gần hơn mức này => dừng ngay dù encoder chưa đủ quãng (lấy từ project mm)
+#define FRONT_SLOW_MM 150     // tường trước gần hơn mức này => chạy chậm (CRAWL_PWM) để kịp phanh
+// Chế độ 2 (đi từng ô): sau khi dừng cuối đoạn, tự xoay chỉnh tại chỗ theo sai số bám tường
+// (dùng chung WALL_ERR_DEADBAND_MM làm ngưỡng "đã thẳng") cho tới khi thẳng giữa ô rồi mới đi tiếp.
+#define ALIGN_TIMEOUT_MS 1500  // quá thời gian này vẫn chưa canh xong thì bỏ qua, đi tiếp luôn
+#define ALIGN_NUDGE_MS   30    // mỗi lần nhích quay bao lâu (ms)
+#define ALIGN_SETTLE_MS  120   // đứng yên hẳn bao lâu trước khi đo lại (tránh rung làm ToF sai)
+#define ALIGN_PWM_MIN    45    // PWM nhích tối thiểu để bánh thực sự quay (thắng ma sát tĩnh)
+#define ALIGN_PWM_MAX    90
 // Độ dài 1 ô = SỐ XUNG encoder (trung bình 2 bánh), KHÔNG quy ra cm — chỉnh live ở Chế độ 3 (SET_CELL),
 // robot lưu vào flash. Đi được nửa số xung này thì vị trí trên web sang ô mới.
 #define CELL_LEN_PULSES     100    // MẶC ĐỊNH
 #define CELL_LEN_MIN_PULSES 30
 #define CELL_LEN_MAX_PULSES 300
 #define CRAWL_CELL_FRAC     0.33f  // giảm tốc trong 1/3 ô cuối
+// Explore: sau khi sang ô mới, dừng hẳn bấy nhiêu ms trước khi đo tường/đi tiếp
+// — cảm biến hết rung/ổn định số đo, web kịp hiển thị vị trí ô mới.
+#define CELL_PAUSE_MS 400
 #define ENC_STALL_MS 1500      // đang chạy mà encoder không tăng quá lâu => dừng, báo lỗi encoder
 #define MAX_SPEED_PWM 60       // tốc độ chạy thẳng mặc định (chỉnh live 0-160 ở Chế độ 3: SET_DSPD)
 #define DRIVE_SPEED_MAX 160    // giới hạn trên của thanh chỉnh tốc độ
@@ -104,5 +157,12 @@
 // Robot KHÔNG tự chạy/quay mà gyro báo chậm hơn mức này => coi là trôi, giữ nguyên góc và tự chỉnh offset.
 // Lấy tay xoay xe nhanh hơn mức này thì đồng hồ trên web vẫn quay theo.
 #define GYRO_HAND_DPS 10.0f
+// Hệ số hiệu chỉnh góc gyro: gyro báo ÍT hơn góc quay THẬT (vd. quay thật 110° mà gyro báo 90°)
+// => tăng hệ số này (vd. 110/90 ≈ 1.22); báo NHIỀU hơn thật thì giảm. Cách chỉnh: quay robot 1 góc
+// đã biết (vd. quay tay/động cơ nhiều vòng liên tiếp), đo góc THẬT bằng thước đo góc/đánh dấu sàn,
+// so với góc gyro báo (ô "ĐÃ QUAY" ở Chế độ 1), rồi chỉnh SET_YAWSCALE = góc thật / góc gyro báo
+// cho tới khi 2 số khớp nhau. Nguyên nhân thường gặp: cảm biến gắn hơi nghiêng so với trục quay
+// thật của xe (trục Z không thẳng đứng) => quay tại chỗ chỉ "thấy" 1 phần góc thật.
+#define GYRO_YAW_SCALE_DEFAULT 1.0f
 
 #endif

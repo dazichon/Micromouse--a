@@ -2,9 +2,12 @@
 #include <Arduino.h>
 #include "RobotConfig.h"
 #include "PIDController.h"
+#include "Map.h"
+#include "Floodfill.h"
 
-enum Heading { NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3 };
-enum NavState { NAV_IDLE, NAV_EXPLORING, NAV_GOAL_REACHED, NAV_FAST_RUN, NAV_DONE };
+struct WallDist;   // định nghĩa đầy đủ trong VL53Sensors.h — chỉ cần khai báo trước cho tham số hàm
+
+enum NavState { NAV_IDLE, NAV_EXPLORING, NAV_GOAL_REACHED, NAV_FAST_RUN, NAV_DONE, NAV_PID_TEST, NAV_PID_TEST_CELL };
 
 class RobotNav {
 public:
@@ -17,6 +20,12 @@ public:
   bool startUpdate();
   bool isUpdating() const { return _updateMode && _state == NAV_EXPLORING; }
   void startFastRun();
+  // Chế độ 2 (căn chỉnh PID): chạy PID bám tường LIÊN TỤC, TỰ DO — KHÔNG đụng tới bản đồ/vị trí ô
+  // (không advanceCell, không gửi "map" lên web) — chỉ để test Kp/Ki/Kd live. Dừng bằng STOP.
+  bool startPidTest();
+  // Chế độ 2 - biến thể "đi từng ô": giống startPidTest() nhưng đi từng đoạn dài _cellPulses rồi
+  // dừng ngắn (CELL_PAUSE_MS) như driveOneCell() — VẪN KHÔNG đụng bản đồ/vị trí ô (advanceCell bị tắt).
+  bool startPidTestCell();
   void stop();
   void resetMaze();
   void resetAll();   // xoá bản đồ đang khám phá + map đã lưu trong flash, về trạng thái ban đầu
@@ -45,10 +54,10 @@ public:
   // ----- cấu hình mê cung (tab Bản đồ trên web) -----
   // trả về "" nếu OK, ngược lại là lý do lỗi
   String setMazeConfig(int cells, int goalRow, int goalCol, int goalSize);
-  int mazeCells() const { return _cells; }
-  int goalRow() const   { return _goalRow; }
-  int goalCol() const   { return _goalCol; }
-  int goalSize() const  { return _goalSize; }
+  int mazeCells() const { return _map.cells(); }
+  int goalRow() const   { return _map.goalRow(); }
+  int goalCol() const   { return _map.goalCol(); }
+  int goalSize() const  { return _map.goalSize(); }
 
   // gọi định kỳ bên trong các vòng chạy/quay (blocking) để vẫn gửi được telemetry qua BLE
   void setIdleHook(void (*hook)()) { _idleHook = hook; }
@@ -73,9 +82,10 @@ public:
   void  setCellPulses(int pulses);
   int   cellPulses() const { return _cellPulses; }
   long  lastDrivePulses() const { return _lastDrivePulses; }   // số xung encoder đếm được ở lần chạy gần nhất
-  // PID bám tường chỉnh live qua BLE (SET_KP / SET_KI / SET_KD) — giống project mm
+  // PID bám tường chỉnh live qua BLE (SET_KP / SET_KI / SET_KD) — giống project mm. 1 PID DUY NHẤT
+  // dùng cho mọi trường hợp (có tường / không tường) — sai số đưa vào đã được trộn sẵn, xem
+  // wallFollowCorrection().
   PIDController& wallPid() { return _wallPid; }
-  PIDController& gyroPid() { return _gyroPid; }
   // src: 'G' = dừng theo gyro, 'E' = theo encoder (gyro lỗi), 'T' = hết giờ (cả 2 không đọc được)
   bool  takeTurnResult(float& target, float& turned, char& src) {
     if (!_turnResultReady) return false;
@@ -97,7 +107,6 @@ private:
   int   _driveSpeed = MAX_SPEED_PWM;
   int   _cellPulses = CELL_LEN_PULSES;
   long  _lastDrivePulses = 0;
-  bool  spinUntil(int dir, float targetYaw, bool untilAbove, int pwm, unsigned long timeoutMs);
   float _lastTurnTarget = 0, _lastTurnDone = 0;
   bool  _turnResultReady = false;
   char  _lastTurnSrc = 'G';
@@ -105,20 +114,14 @@ private:
   float encoderTurnDeg() const;
   void idle() { if (_idleHook) _idleHook(); }
   void advanceCell();                // tiến 1 ô theo _heading, báo map đổi để BLE gửi vị trí mới
-  static const int MAX_SIZE = MAZE_MAX_SIZE;
 
-  // cấu hình mê cung lúc chạy (chỉnh qua BLE, lưu flash)
-  int _cells = MAZE_CELLS;
-  int _size = 2 * MAZE_CELLS + 1;        // kích thước lưới _maze đang dùng
-  int _goalRow = GOAL_ROW, _goalCol = GOAL_COL, _goalSize = GOAL_SIZE;
+  // cấu hình mê cung lúc chạy (chỉnh qua BLE, lưu flash) + lưới tường đã dò được
   void loadMazeConfig();
   void reloadMap();                      // reset map + nạp map đã lưu (nếu khớp cấu hình)
 
-  uint8_t _maze[MAX_SIZE][MAX_SIZE];
+  Map _map;
+  Floodfill _floodfill;
   bool _updateMode = false;
-  bool _wallSeen[MAX_SIZE][MAX_SIZE];    // tường đã được đo lại trong lần chạy cập nhật hiện tại
-  bool forgetUnseenWalls();              // tường cũ chưa đo lại => về "chưa biết"; true nếu có thay đổi
-  int _dist[MAX_SIZE][MAX_SIZE];
 
   int _cx = 1, _cy = 1;
   Heading _heading = EAST;
@@ -132,40 +135,53 @@ private:
   struct WallDistLocal { int front_mm, left_mm, right_mm; bool front_ok, left_ok, right_ok; };
   WallDistLocal _lastDist{};
 
-  // hệ số PID lấy từ project mm (đã chỉnh trên sa hình thật)
-  PIDController _wallPid{0.25f, 0.0f, 0.8f, -40, 40};   // bám tường: error(mm) -> hiệu chỉnh PWM
-  PIDController _gyroPid{0.6f, 0.0f, 0.0f, -60, 60};    // không có tường 2 bên: giữ hướng theo gyro
-  PIDController _syncPid{0.08f, 0.0f, 0.0f, -60, 60};   // gyro lỗi: đồng bộ 2 encoder
-
-  // ----- flood fill -----
-  // unknownIsWall = true: coi tường chưa biết là tường thật (lập đường fast run chỉ qua đường đã xác nhận)
-  void floodFill(bool unknownIsWall = false);   // từ vùng đích (_goalRow/_goalCol/_goalSize)
-  bool isGoalCell(int cx, int cy) const;
-  bool canMove(int x, int y, int nx, int ny, bool unknownIsWall = false);
-  Heading chooseBestDirection(int cx, int cy, Heading h);
+  // Hệ số PID lấy đúng từ project mm: Kd ép về 0 để triệt tiêu sốc bẻ lái do nhiễu ToF (Kd nhân
+  // với tốc độ BIẾN THIÊN của sai số — cảm biến càng nhiễu thì đạo hàm càng giật).
+  PIDController _wallPid{0.18f, 0.0f, 0.0f, -WALL_ERR_MAX_MM, WALL_ERR_MAX_MM};
 
   // ----- wall sensing -----
   void detectAndUpdateWalls(int cx, int cy, Heading h);
-  void wallIndex(int cx, int cy, Heading side, int& wx, int& wy) const;
-  void setWall(int cx, int cy, Heading side, bool present);   // side = hướng tuyệt đối
 
   // ----- motion -----
   void rotateTo(Heading target);
   void turn90(int dir);              // dir: -1 trái, +1 phải
   float turnDeg(int dir, float deg); // trả về góc thực tế đã quay (độ)
-  bool driveOneCell();               // chạy 1 ô (18cm), wall-follow PID, true nếu ok
-  void driveCells(int cells, int pwm);   // đi thẳng cells ô, mỗi ô = _cellPulses xung encoder
+  bool driveOneCell();               // chạy 1 ô, wall-follow PID, true nếu đi hết ô
+  // đi thẳng cells ô, mỗi ô = _cellPulses xung encoder; false nếu phải dừng sớm (tường / encoder / timeout)
+  // trackMap=false: bỏ advanceCell() (không cập nhật _cx/_cy, không báo map đổi) — dùng cho Chế độ 2.
+  bool driveCells(int cells, int pwm, bool trackMap = true);
+  bool frontWallKnown() const;       // bản đồ có tường ở phía trước ô hiện tại
+  // 1 bước PID bám tường dùng trong driveCells() (Explore/Fast-run/Chế độ 2/3 đều gọi qua đây):
+  // trả về correction (PWM, >0 = lái sang TRÁI). Sai số đưa vào PID là hỗn hợp (xem RobotConfig.h):
+  // có tường thì W1*sai_số_tường + W2*sai_số_đồng_bộ_encoder; không tường thì trộn gyro+encoder.
+  // smoothL/smoothR (EMA khoảng cách), pidMode (chế độ bám hiện tại), lastEncL/lastEncR (mốc xung
+  // encoder lần gọi trước, để tính CHÊNH LỆCH GIỮA 2 LẦN GỌI chứ không phải cộng dồn từ đầu),
+  // smoothErr (lọc thông thấp lần 2 trên sai số đã trộn) — tất cả là state riêng của người gọi.
+  float wallFollowCorrection(const WallDist& w, float& smoothL, float& smoothR, int& pidMode,
+                              long& lastEncL, long& lastEncR, float& smoothErr);
+
+  // ----- Chế độ 2: test PID — port 1:1 startPID()/updatePIDLoop() của project mm (không qua
+  // wallFollowCorrection()/driveCells()). Chạy mỗi lần update() gọi tới (không rate-limit như
+  // project mm chạy tự do mỗi vòng loop()), KHÔNG theo ô/bản đồ. Gặp vật cản trước mặt thì DỪNG
+  // HẲN (giống mm: pidRunActive=false) — không tự chạy lại như bản driveCells()-based cũ.
+  void pidTestStep();
+  float _ptSmoothL = WALL_TARGET_LEFT_MM, _ptSmoothR = WALL_TARGET_RIGHT_MM;
+  long  _ptLastEncL = 0, _ptLastEncR = 0;
+  float _ptSmoothErr = 0.0f;
+  float _ptTargetYaw = 0.0f;      // mốc góc lúc bắt đầu — dùng khi không có tường (giống _targetYaw trong mm)
+  unsigned long _ptLastStepUs = 0;
+
+  // ----- Chế độ 2 (biến thể đi từng ô): dùng driveCells(1, speed, /*trackMap=*/false) — chặn như
+  // driveOneCell() nên STOP trễ tối đa ~1 đoạn, KHÔNG đụng bản đồ/vị trí ô. Có tường/vật cản trước
+  // mặt thì GIỮ NGUYÊN chờ hết vật cản rồi tự đi tiếp (giống Tự Do), không bỏ cuộc.
+  void pidTestCellStep();
+  // Sau khi dừng cuối đoạn: đo lại (readFresh, bỏ mẫu cũ lúc đang chạy) rồi tự xoay tại chỗ theo
+  // sai số bám tường tới khi thẳng giữa ô (hoặc hết ALIGN_TIMEOUT_MS / không có tường để canh).
+  void alignInCell();
 
   // ----- fast run path planning -----
   bool buildPlannedPath(int startCx, int startCy, Heading startH);
-  Heading chooseBestDirectionSolved(int mx, int my, Heading h);
-  void appendPathCmd(char c);
   void executePlannedPath();
-
-  // ----- flash persistence -----
-  bool saveMazeToFlash();
-  bool loadMazeFromFlash();
-  void clearMazeFlash();
 };
 
 extern RobotNav robotNav;
