@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include "RobotConfig.h"
 
 // Driver MPU6050 lấy từ project mm: đọc thanh ghi trực tiếp qua I2C, gyro ±2000°/s,
 // chỉ tích phân trục Z (yaw). Không cần thư viện Adafruit.
@@ -31,6 +32,10 @@ public:
     float biasDps() const { return _gyroZOffset; }
     float rateDps() const { return _rateDps; }   // tốc độ quay hiện tại (đã trừ offset) — để chẩn đoán trôi
 
+    // Hệ số hiệu chỉnh góc gyro (chỉnh live qua BLE: SET_YAWSCALE) — xem giải thích ở RobotConfig.h.
+    void  setYawScale(float s) { _yawScale = s; }
+    float yawScale() const { return _yawScale; }
+
 private:
     uint8_t _addr;
     float _gyroZOffset;
@@ -43,6 +48,7 @@ private:
     unsigned long _lastTime;
     bool _moving = false;
     float _rateDps = 0.0f;   // tốc độ quay Z đã trừ offset và lọc (°/s)
+    float _yawScale = GYRO_YAW_SCALE_DEFAULT;
 
     bool readRawData(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz);
 };

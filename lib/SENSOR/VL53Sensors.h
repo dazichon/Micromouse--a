@@ -20,10 +20,22 @@ private:
   struct Chan {
     VL53L0X* dev;
     bool inited = false;
-    int mm = 8190;
+    int mm = 8190;              // giá trị CUỐI (đã lọc) — dùng cho toàn bộ code
     uint32_t stampMs = 0;      // thời điểm nhận mẫu gần nhất
+    int rawHist[3] = {8190, 8190, 8190}; // 3 mẫu raw GẦN (trong tầm) gần nhất, dùng để lọc median
+    int histCount = 0;          // số mẫu raw đã có (để median ổn định ngay từ mẫu đầu)
+    float ema = 8190.0f;        // trạng thái bộ lọc EMA (chỉ chạy trên mẫu GẦN, xem poll())
+    bool emaInit = false;
+    // Trạng thái GẦN/XA có debounce riêng — KHÔNG được trộn số học 1 mẫu "ngoài tầm" (vd. 8190)
+    // với các mẫu khoảng cách thật (vd. 100mm) qua median/EMA, vì kết quả sẽ là 1 số vô nghĩa ở
+    // giữa (vd. ~3000-5000mm) trong khi thực tế là "có tường sát" xen kẽ "không thấy gì".
+    bool isFar = true;
+    int  farStreak = 0, nearStreak = 0;
   };
-  bool poll(Chan& c);          // true nếu vừa lấy được mẫu mới
+  // true nếu vừa lấy được mẫu mới. smooth=false: dùng thẳng raw, không qua median/EMA/debounce
+  // (cảm biến TRƯỚC cần phản ứng ngay để phanh kịp — không nên lọc, giống project mm).
+  bool poll(Chan& c, bool smooth = true);
+  static int median3(int a, int b, int c);
   bool fresh(const Chan& c) const;
   WallDist snapshot() const;
 

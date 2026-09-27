@@ -163,9 +163,10 @@ void MPU6050::update() {
         gyroZRate = 0.0f;
     }
 
-    // Tích phân vận tốc góc theo thời gian để ra góc Yaw
-    _yaw += gyroZRate * dt;
-    _heading += gyroZRate * dt;
+    // Tích phân vận tốc góc theo thời gian để ra góc Yaw. _yawScale bù sai số hệ thống (thường do
+    // cảm biến gắn hơi nghiêng so với trục quay thật) khiến gyro báo ít/nhiều hơn góc quay thật.
+    _yaw += gyroZRate * dt * _yawScale;
+    _heading += gyroZRate * dt * _yawScale;
 }
 
 float MPU6050::getRoll() const {

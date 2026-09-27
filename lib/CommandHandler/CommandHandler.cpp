@@ -29,18 +29,30 @@ void CommandHandler::processBLECommands() {
         else bleManager.println(">> [BLE] Toc do = 0, tang toc do truoc khi kham pha");
     } else if (cmd == "UPDATE" || cmd == "UPDATE_MAP") {
         // chạy lại mê cung, giữ bản đồ cũ và sửa những tường khác đi
-        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN)
+        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN || robotNav.state() == NAV_PID_TEST || robotNav.state() == NAV_PID_TEST_CELL)
             bleManager.println(">> [BLE] Dang chay, gui STOP truoc khi CAP NHAT");
         else if (robotNav.startUpdate()) bleManager.println(">> [BLE] START CAP NHAT ME CUNG");
         else bleManager.println(">> [BLE] Toc do = 0, tang toc do truoc khi cap nhat");
     } else if (cmd == "FAST" || cmd == "FASTRUN") {
         robotNav.startFastRun();
         bleManager.println(">> [BLE] START FAST RUN");
+    } else if (cmd == "PIDTEST" || cmd == "TEST_PID") {
+        // Chế độ 2: chạy PID bám tường liên tục, TỰ DO (không theo bản đồ) để test Kp/Ki/Kd live
+        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN)
+            bleManager.println(">> [BLE] Dang chay, gui STOP truoc khi test PID");
+        else if (robotNav.startPidTest()) bleManager.println(">> [BLE] START TEST PID (chay tu do)");
+        else bleManager.println(">> [BLE] Toc do = 0, tang toc do (DSPD) truoc khi test PID");
+    } else if (cmd == "PIDCELL" || cmd == "TEST_PID_CELL") {
+        // Chế độ 2 (biến thể): chạy PID bám tường TỪNG Ô (dùng CELL đã chỉnh), vẫn không theo bản đồ
+        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN)
+            bleManager.println(">> [BLE] Dang chay, gui STOP truoc khi test PID");
+        else if (robotNav.startPidTestCell()) bleManager.println(">> [BLE] START TEST PID TUNG O");
+        else bleManager.println(">> [BLE] Toc do = 0, tang toc do (DSPD) truoc khi test PID");
     } else if (cmd == "STOP" || cmd == "ST") {
         robotNav.stop();
         bleManager.println(">> [BLE] ROBOT STOPPED");
     } else if (cmd == "RESET" || cmd == "RESET_MAP") {
-        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN) {
+        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN || robotNav.state() == NAV_PID_TEST || robotNav.state() == NAV_PID_TEST_CELL) {
             bleManager.println(">> [BLE] Dang chay, gui STOP truoc khi RESET");
         } else {
             robotNav.resetAll();
@@ -51,7 +63,7 @@ void CommandHandler::processBLECommands() {
         sendParams();
         sendMazeConfig();
     } else if (cmd == "GYRO_CAL") {
-        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN) {
+        if (robotNav.state() == NAV_EXPLORING || robotNav.state() == NAV_FAST_RUN || robotNav.state() == NAV_PID_TEST || robotNav.state() == NAV_PID_TEST_CELL) {
             bleManager.println(">> [BLE] Dang chay, gui STOP truoc khi hieu chuan gyro");
         } else {
             gyro.calibrate();
@@ -91,13 +103,19 @@ void CommandHandler::processBLECommands() {
         else if (key == "SPD") spd = (int)val;
         else if (key == "DSPD") { robotNav.setDriveSpeed((int)val); sendParams(); return; }
         else if (key == "CELL") { robotNav.setCellPulses((int)lroundf(val)); sendParams(); return; }   // độ dài 1 ô (xung encoder)
+        else if (key == "YAWSCALE") {
+            // hiệu chỉnh gyro báo ít/nhiều hơn góc quay thật — xem giải thích ở RobotConfig.h
+            gyro.setYawScale(val);
+            bleManager.println(">> [BLE] Yaw scale = " + String(gyro.yawScale(), 3));
+            sendParams();
+            return;
+        }
         else if (key == "KP" || key == "KI" || key == "KD") {
-            // PID bám tường (như project mm): Kp của PID giữ hướng gyro = 1.5 x Kp bám tường
+            // 1 PID DUY NHẤT dùng cho mọi trường hợp (bám tường/gyro+encoder) — xem wallFollowCorrection()
             PIDController& w = robotNav.wallPid();
-            PIDController& g = robotNav.gyroPid();
-            if (key == "KP") { w.setGains(val, w.getKi(), w.getKd()); g.setGains(val * 1.5f, g.getKi(), g.getKd()); }
-            else if (key == "KI") { w.setGains(w.getKp(), val, w.getKd()); g.setGains(g.getKp(), val, g.getKd()); }
-            else { w.setGains(w.getKp(), w.getKi(), val); }
+            if (key == "KP") w.setGains(val, w.getKi(), w.getKd());
+            else if (key == "KI") w.setGains(w.getKp(), val, w.getKd());
+            else w.setGains(w.getKp(), w.getKi(), val);
             bleManager.println(">> [BLE] PID bam tuong Kp=" + String(w.getKp(), 2) + " Ki=" + String(w.getKi(), 3) + " Kd=" + String(w.getKd(), 2));
             return;
         }
@@ -120,7 +138,8 @@ void CommandHandler::sendParams() {
                      ",\"rc\":" + String(robotNav.rightComp(), 1) +
                      ",\"spd\":" + String(robotNav.turnSpeed()) +
                      ",\"dspd\":" + String(robotNav.driveSpeed()) +
-                     ",\"cell\":" + String(robotNav.cellPulses()) + "}";
+                     ",\"cell\":" + String(robotNav.cellPulses()) +
+                     ",\"yawscale\":" + String(gyro.yawScale(), 3) + "}";
     bleManager.println(jsonMsg);
 }
 
